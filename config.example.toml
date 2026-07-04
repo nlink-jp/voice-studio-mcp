@@ -26,13 +26,17 @@ shutdown_timeout_seconds = 10        # SIGTERM grace before SIGKILL
 concurrency = 1                      # parallel /synthesis calls (CPU inference: keep low)
 default_speed = 1.0                  # speedScale when a line has no "speed"
 default_intensity = 1.0              # intonationScale when a line has no "intensity"
+default_volume = 1.0                 # volumeScale when a line has no "volume" ((0.0, 2.0])
 pre_phoneme_length = 0.1
 post_phoneme_length = 0.1
 output_sampling_rate = 44100         # forced on every line so master can concat losslessly
 
 [master]
 ffmpeg_path = "ffmpeg"               # absolute path or a name found in PATH
-loudnorm_i = -16.0                   # integrated loudness target (LUFS; podcast standard)
+loudnorm_i = -18.0                   # integrated loudness target (LUFS). -18 = audiobook
+                                     # range (default); -16 = louder podcast standard.
+                                     # This governs the final perceived volume of master
+                                     # output — lower it if the result feels too loud.
 loudnorm_tp = -1.5                   # true peak (dBTP)
 loudnorm_lra = 11.0                  # loudness range (LU)
 mp3_bitrate = "192k"

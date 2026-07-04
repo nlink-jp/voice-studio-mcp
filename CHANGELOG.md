@@ -35,4 +35,13 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `doctor` subcommand (config / engine / ffmpeg / workspace checks).
 - Hermetic test suite: httptest mock engine + fake ffmpeg runner; e2e
   harness driving the built binary over stdio (`make test-e2e`); opt-in
-  real-engine e2e (`VOICE_STUDIO_TEST_REAL_ENGINE=1`).
+  real-engine e2e including a full production simulation
+  (`VOICE_STUDIO_TEST_REAL_ENGINE=1`).
+- Per-line `volume` (engine `volumeScale`) with `synthesis.default_volume`
+  config; part of the synthesis cache key.
+
+### Changed
+
+- Default mastering loudness target lowered from -16 LUFS to -18 LUFS
+  (audiobook range) after listening feedback; configurable via
+  `master.loudnorm_i`.

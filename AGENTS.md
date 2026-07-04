@@ -59,9 +59,12 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
   debug, never to our stdout.
 - **AudioQuery is `map[string]any` on purpose** — AivisSpeech adds fields
   beyond VOICEVOX (`tempoDynamicsScale` etc.); we override only
-  `speedScale`/`intonationScale`/`prePhonemeLength`/`postPhonemeLength`/
-  `outputSamplingRate`/`outputStereo` and pass the rest through. Do not
-  turn it into a struct.
+  `speedScale`/`intonationScale`/`volumeScale`/`prePhonemeLength`/
+  `postPhonemeLength`/`outputSamplingRate`/`outputStereo` and pass the
+  rest through. Do not turn it into a struct.
+- **Two volume knobs** — per-line `volume` (volumeScale, in the cache key)
+  is for relative balance between lines; the final perceived loudness of
+  master output is governed by `master.loudnorm_i` (-18 LUFS default).
 - **Sampling rate is forced** to `synthesis.output_sampling_rate` on every
   line — mixed rates would break the concat demuxer in `master`.
 - **`pause_after_ms` is not in the cache key** — pauses are applied at

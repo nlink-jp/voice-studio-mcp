@@ -73,7 +73,7 @@ func TestParseCollectsAllErrors(t *testing.T) {
 }
 
 func TestParseRejectsUnknownFields(t *testing.T) {
-	_, errs := script.Parse(strings.NewReader(`{"id":1,"speaker":"a","text":"x","volume":2}`))
+	_, errs := script.Parse(strings.NewReader(`{"id":1,"speaker":"a","text":"x","pitch":2}`))
 	if len(errs) != 1 || !strings.Contains(errs[0].Message, "invalid JSON") {
 		t.Errorf("errs: %+v", errs)
 	}

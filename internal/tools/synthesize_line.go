@@ -23,6 +23,7 @@ var lineSchema = `{
     "style": {"type": "string", "description": "Named style from the casting entry (e.g. 悲しみ); empty = default style"},
     "intensity": {"type": "number", "description": "Emotional strength 0.0-2.0 (engine intonationScale)"},
     "speed": {"type": "number", "description": "Speech speed 0.5-2.0"},
+    "volume": {"type": "number", "description": "Per-line volume 0.0-2.0 (engine volumeScale); for relative balance, since master re-levels overall loudness"},
     "pause_after_ms": {"type": "integer", "description": "Silence after this line, applied at mastering time"}
   },
   "additionalProperties": false

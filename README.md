@@ -28,8 +28,8 @@ agent-authored script into mastered audio. No cloud APIs, no credentials.
 - **Async jobs** — long scripts synthesize in the background; poll with
   `check_job`.
 - **Mastering** — ffmpeg concat with per-line pauses, one-pass loudness
-  normalization (-16 LUFS default), mp3 or m4b with scene chapters, and
-  an auto-generated credits file.
+  normalization (-18 LUFS default; configurable), mp3 or m4b with scene
+  chapters, and an auto-generated credits file.
 - **Engine lifecycle management** — spawns the AivisSpeech Engine on
   startup and reaps it on shutdown (or attaches to one that is already
   running).
@@ -97,7 +97,9 @@ One utterance per line; the schema is the contract for agent-side skills:
 
 - `id` (required, unique, >0) — output is `wav/<id>.wav`; retakes overwrite
 - `speaker` (required) — resolved via the casting table
-- `style` / `intensity` (0–2) / `speed` (0.5–2) — performance direction
+- `style` / `intensity` (0–2) / `speed` (0.5–2) / `volume` (0–2) —
+  performance direction (`volume` sets relative balance; overall loudness
+  is governed by the mastering `loudnorm_i` target)
 - `pause_after_ms` — silence inserted at mastering time (does not
   invalidate the synthesis cache)
 - `scene` — m4b chapter boundaries

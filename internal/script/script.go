@@ -35,6 +35,10 @@ type Line struct {
 	Intensity *float64 `json:"intensity,omitempty"`
 	// Speed maps to the engine's speedScale (0.5–2.0).
 	Speed *float64 `json:"speed,omitempty"`
+	// Volume maps to the engine's volumeScale (0.0–2.0, exclusive of 0).
+	// Note that master's loudness normalization largely re-levels the final
+	// mix; per-line volume is for relative balance (whispers, shouts).
+	Volume *float64 `json:"volume,omitempty"`
 	// PauseAfterMS is silence inserted after this line at mastering time.
 	// It does not affect synthesis (and therefore not the synthesis cache).
 	PauseAfterMS *int `json:"pause_after_ms,omitempty"`
@@ -134,6 +138,8 @@ func validateLine(ln Line) string {
 		return "intensity must be within 0.0–2.0"
 	case ln.Speed != nil && (*ln.Speed < 0.5 || *ln.Speed > 2.0):
 		return "speed must be within 0.5–2.0"
+	case ln.Volume != nil && (*ln.Volume <= 0.0 || *ln.Volume > 2.0):
+		return "volume must be within (0.0, 2.0]"
 	case ln.PauseAfterMS != nil && *ln.PauseAfterMS < 0:
 		return "pause_after_ms must be >= 0"
 	}

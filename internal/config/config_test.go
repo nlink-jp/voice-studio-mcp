@@ -26,6 +26,12 @@ func TestDefaultValues(t *testing.T) {
 	if c.Master.FFmpegPath != "ffmpeg" {
 		t.Errorf("default ffmpeg path: %q", c.Master.FFmpegPath)
 	}
+	if c.Synthesis.DefaultVolume != 1.0 {
+		t.Errorf("default volume: %v", c.Synthesis.DefaultVolume)
+	}
+	if c.Master.LoudnormI != -18.0 {
+		t.Errorf("default loudnorm target: %v", c.Master.LoudnormI)
+	}
 	if !strings.HasSuffix(c.Workspace.Dir, ".voice-studio") {
 		t.Errorf("default workspace dir: %q", c.Workspace.Dir)
 	}
@@ -121,6 +127,16 @@ mode = "auto"
 `)
 	if _, err := config.Load(path); err == nil || !strings.Contains(err.Error(), "engine.mode") {
 		t.Errorf("expected mode error, got %v", err)
+	}
+}
+
+func TestLoadRejectsBadVolume(t *testing.T) {
+	path := writeConfig(t, `
+[synthesis]
+default_volume = 0.0
+`)
+	if _, err := config.Load(path); err == nil || !strings.Contains(err.Error(), "default_volume") {
+		t.Errorf("expected volume error, got %v", err)
 	}
 }
 

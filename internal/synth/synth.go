@@ -52,9 +52,9 @@ func CacheIndexPath(ws *workspace.Workspace) string {
 
 // Key computes the cache key for a line under the synthesizer's settings.
 func (s *Synthesizer) Key(line script.Line, res Resolved) string {
-	speed, intensity := s.effective(line)
+	speed, intensity, volume := s.effective(line)
 	return CacheKey(s.EngineVersion, res.SpeakerUUID, res.StyleID,
-		speed, intensity, s.Cfg.PrePhonemeLength, s.Cfg.PostPhonemeLength,
+		speed, intensity, volume, s.Cfg.PrePhonemeLength, s.Cfg.PostPhonemeLength,
 		s.Cfg.OutputSamplingRate, line.Text)
 }
 
@@ -80,12 +80,13 @@ func (s *Synthesizer) SynthesizeLine(ctx context.Context, ws *workspace.Workspac
 	if err != nil {
 		return LineResult{}, err
 	}
-	speed, intensity := s.effective(line)
+	speed, intensity, volume := s.effective(line)
 	// Override only the keys we own; engine-specific fields (e.g.
 	// tempoDynamicsScale) pass through untouched. The sampling rate is forced
 	// to one value across all lines so mastering can concat losslessly.
 	q["speedScale"] = speed
 	q["intonationScale"] = intensity
+	q["volumeScale"] = volume
 	q["prePhonemeLength"] = s.Cfg.PrePhonemeLength
 	q["postPhonemeLength"] = s.Cfg.PostPhonemeLength
 	q["outputSamplingRate"] = s.Cfg.OutputSamplingRate
@@ -119,7 +120,7 @@ func (s *Synthesizer) SynthesizeLine(ctx context.Context, ws *workspace.Workspac
 	}, nil
 }
 
-func (s *Synthesizer) effective(line script.Line) (speed, intensity float64) {
+func (s *Synthesizer) effective(line script.Line) (speed, intensity, volume float64) {
 	speed = s.Cfg.DefaultSpeed
 	if line.Speed != nil {
 		speed = *line.Speed
@@ -128,7 +129,11 @@ func (s *Synthesizer) effective(line script.Line) (speed, intensity float64) {
 	if line.Intensity != nil {
 		intensity = *line.Intensity
 	}
-	return speed, intensity
+	volume = s.Cfg.DefaultVolume
+	if line.Volume != nil {
+		volume = *line.Volume
+	}
+	return speed, intensity, volume
 }
 
 func writeFileAtomic(path string, data []byte) error {

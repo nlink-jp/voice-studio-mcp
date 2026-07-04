@@ -53,6 +53,7 @@ type SynthesisConfig struct {
 	Concurrency        int     `toml:"concurrency"`
 	DefaultSpeed       float64 `toml:"default_speed"`
 	DefaultIntensity   float64 `toml:"default_intensity"`
+	DefaultVolume      float64 `toml:"default_volume"`
 	PrePhonemeLength   float64 `toml:"pre_phoneme_length"`
 	PostPhonemeLength  float64 `toml:"post_phoneme_length"`
 	OutputSamplingRate int     `toml:"output_sampling_rate"`
@@ -112,13 +113,17 @@ func Default() *Config {
 			Concurrency:        1,
 			DefaultSpeed:       1.0,
 			DefaultIntensity:   1.0,
+			DefaultVolume:      1.0,
 			PrePhonemeLength:   0.1,
 			PostPhonemeLength:  0.1,
 			OutputSamplingRate: 44100,
 		},
 		Master: MasterConfig{
-			FFmpegPath:  "ffmpeg",
-			LoudnormI:   -16.0,
+			FFmpegPath: "ffmpeg",
+			// -18 LUFS (audiobook range) rather than the louder -16 podcast
+			// standard: narration listened to for long stretches wants the
+			// extra headroom.
+			LoudnormI:   -18.0,
 			LoudnormTP:  -1.5,
 			LoudnormLRA: 11.0,
 			MP3Bitrate:  "192k",
@@ -159,6 +164,9 @@ func (c *Config) validate() error {
 	}
 	if c.Synthesis.OutputSamplingRate < 8000 {
 		return fmt.Errorf("synthesis.output_sampling_rate must be >= 8000, got %d", c.Synthesis.OutputSamplingRate)
+	}
+	if c.Synthesis.DefaultVolume <= 0 || c.Synthesis.DefaultVolume > 2.0 {
+		return fmt.Errorf("synthesis.default_volume must be within (0.0, 2.0], got %g", c.Synthesis.DefaultVolume)
 	}
 	return nil
 }

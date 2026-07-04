@@ -100,7 +100,7 @@ func TestBuildMP3(t *testing.T) {
 		t.Errorf("silence args: %s", silence)
 	}
 	final := strings.Join(fr.cmds[1], " ")
-	for _, want := range []string{"-f concat", "-safe 0", "loudnorm=I=-16:TP=-1.5:LRA=11", "-c:a libmp3lame", "-b:a 192k", "ep1.mp3"} {
+	for _, want := range []string{"-f concat", "-safe 0", "loudnorm=I=-18:TP=-1.5:LRA=11", "-c:a libmp3lame", "-b:a 192k", "ep1.mp3"} {
 		if !strings.Contains(final, want) {
 			t.Errorf("final args missing %q: %s", want, final)
 		}

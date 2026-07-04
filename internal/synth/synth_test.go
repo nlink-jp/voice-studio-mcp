@@ -41,7 +41,7 @@ var testResolved = synth.Resolved{StyleID: enginetest.StyleHeroineSad, SpeakerUU
 
 func TestSynthesizeLineWritesWavAndAppliesParams(t *testing.T) {
 	s, mock, ws, store := newSynth(t)
-	line := script.Line{ID: 42, Speaker: "美咲", Text: "こんにちは", Intensity: f(1.4), Speed: f(0.9)}
+	line := script.Line{ID: 42, Speaker: "美咲", Text: "こんにちは", Intensity: f(1.4), Speed: f(0.9), Volume: f(0.8)}
 
 	res, err := s.SynthesizeLine(context.Background(), ws, store, line, testResolved, false)
 	if err != nil {
@@ -75,8 +75,8 @@ func TestSynthesizeLineWritesWavAndAppliesParams(t *testing.T) {
 		t.Fatalf("synthesis calls: %d", len(qs))
 	}
 	q := qs[0]
-	if q["speedScale"] != 0.9 || q["intonationScale"] != 1.4 {
-		t.Errorf("speed/intensity not applied: %v", q)
+	if q["speedScale"] != 0.9 || q["intonationScale"] != 1.4 || q["volumeScale"] != 0.8 {
+		t.Errorf("speed/intensity/volume not applied: %v", q)
 	}
 	if q["outputSamplingRate"] != float64(s.Cfg.OutputSamplingRate) {
 		t.Errorf("sampling rate not forced: %v", q["outputSamplingRate"])
@@ -96,7 +96,7 @@ func TestSynthesizeLineUsesDefaultsWhenUnset(t *testing.T) {
 		t.Fatal(err)
 	}
 	q := mock.SynthesisQueries()[0]
-	if q["speedScale"] != s.Cfg.DefaultSpeed || q["intonationScale"] != s.Cfg.DefaultIntensity {
+	if q["speedScale"] != s.Cfg.DefaultSpeed || q["intonationScale"] != s.Cfg.DefaultIntensity || q["volumeScale"] != s.Cfg.DefaultVolume {
 		t.Errorf("defaults not applied: %v", q)
 	}
 }
@@ -208,20 +208,21 @@ func TestCacheMissesWhenWavDeleted(t *testing.T) {
 }
 
 func TestCacheKeyStability(t *testing.T) {
-	k1 := synth.CacheKey("v1", "uuid", 100, 1.0, 1.0, 0.1, 0.1, 44100, "text")
-	k2 := synth.CacheKey("v1", "uuid", 100, 1.0, 1.0, 0.1, 0.1, 44100, "text")
+	k1 := synth.CacheKey("v1", "uuid", 100, 1.0, 1.0, 1.0, 0.1, 0.1, 44100, "text")
+	k2 := synth.CacheKey("v1", "uuid", 100, 1.0, 1.0, 1.0, 0.1, 0.1, 44100, "text")
 	if k1 != k2 {
 		t.Errorf("key not deterministic")
 	}
 	variants := []string{
-		synth.CacheKey("v2", "uuid", 100, 1.0, 1.0, 0.1, 0.1, 44100, "text"),
-		synth.CacheKey("v1", "other", 100, 1.0, 1.0, 0.1, 0.1, 44100, "text"),
-		synth.CacheKey("v1", "uuid", 101, 1.0, 1.0, 0.1, 0.1, 44100, "text"),
-		synth.CacheKey("v1", "uuid", 100, 1.1, 1.0, 0.1, 0.1, 44100, "text"),
-		synth.CacheKey("v1", "uuid", 100, 1.0, 1.3, 0.1, 0.1, 44100, "text"),
-		synth.CacheKey("v1", "uuid", 100, 1.0, 1.0, 0.2, 0.1, 44100, "text"),
-		synth.CacheKey("v1", "uuid", 100, 1.0, 1.0, 0.1, 0.1, 24000, "text"),
-		synth.CacheKey("v1", "uuid", 100, 1.0, 1.0, 0.1, 0.1, 44100, "other"),
+		synth.CacheKey("v2", "uuid", 100, 1.0, 1.0, 1.0, 0.1, 0.1, 44100, "text"),
+		synth.CacheKey("v1", "other", 100, 1.0, 1.0, 1.0, 0.1, 0.1, 44100, "text"),
+		synth.CacheKey("v1", "uuid", 101, 1.0, 1.0, 1.0, 0.1, 0.1, 44100, "text"),
+		synth.CacheKey("v1", "uuid", 100, 1.1, 1.0, 1.0, 0.1, 0.1, 44100, "text"),
+		synth.CacheKey("v1", "uuid", 100, 1.0, 1.3, 1.0, 0.1, 0.1, 44100, "text"),
+		synth.CacheKey("v1", "uuid", 100, 1.0, 1.0, 0.8, 0.1, 0.1, 44100, "text"),
+		synth.CacheKey("v1", "uuid", 100, 1.0, 1.0, 1.0, 0.2, 0.1, 44100, "text"),
+		synth.CacheKey("v1", "uuid", 100, 1.0, 1.0, 1.0, 0.1, 0.1, 24000, "text"),
+		synth.CacheKey("v1", "uuid", 100, 1.0, 1.0, 1.0, 0.1, 0.1, 44100, "other"),
 	}
 	seen := map[string]bool{k1: true}
 	for i, v := range variants {

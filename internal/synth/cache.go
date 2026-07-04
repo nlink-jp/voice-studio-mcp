@@ -24,12 +24,13 @@ type CacheEntry struct {
 // pause_after_ms is deliberately NOT part of the key: pauses are applied at
 // mastering time, so changing a pause must not force re-synthesis. The engine
 // version is included because a model/engine update can change output.
-func CacheKey(engineVersion, speakerUUID string, styleID int, speed, intensity, prePhoneme, postPhoneme float64, samplingRate int, text string) string {
-	payload := "v1|" + engineVersion +
+func CacheKey(engineVersion, speakerUUID string, styleID int, speed, intensity, volume, prePhoneme, postPhoneme float64, samplingRate int, text string) string {
+	payload := "v2|" + engineVersion +
 		"|" + speakerUUID +
 		"|" + strconv.Itoa(styleID) +
 		"|" + formatFloat(speed) +
 		"|" + formatFloat(intensity) +
+		"|" + formatFloat(volume) +
 		"|" + formatFloat(prePhoneme) +
 		"|" + formatFloat(postPhoneme) +
 		"|" + strconv.Itoa(samplingRate) +
