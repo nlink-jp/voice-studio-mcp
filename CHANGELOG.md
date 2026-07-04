@@ -41,6 +41,11 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   config; part of the synthesis cache key.
 - Documentation set: architecture reference, setup guide, and seven ADRs
   recording design rationale, mirrored in `docs/{en,ja}/`.
+- Agent workflow guide (`docs/{en,ja}/reference/agent-workflow*.md`) — the
+  10-step procedure Claude Code / Cowork follows from manuscript to
+  mastered audio, with direction guidelines, error dispatch table, and
+  human checkpoints — plus `samples/` (manuscript, reference script,
+  casting template).
 
 ### Changed
 

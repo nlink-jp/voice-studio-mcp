@@ -1,0 +1,21 @@
+# サンプルキャスティング表 — samples/script/yoiyami.jsonl 用
+#
+# speaker_uuid / style_id は環境ごとに異なる。list_speakers ツールで
+# 実際の値を確認して差し替えること(このままでは動かない)。
+# "強め" スタイルがないモデルの場合はデフォルトの style_id を指す値に
+# 変えてよい(台本の style 指定はキャスティング表側で吸収できる)。
+
+[characters."ナレーター"]
+speaker_uuid = "REPLACE-WITH-list_speakers-UUID"
+style_id = 888753760
+credit = "AivisSpeech:モデル名"
+license_checked = false   # 規約を確認したら true にする
+
+[characters."美咲"]
+speaker_uuid = "REPLACE-WITH-list_speakers-UUID"
+style_id = 888753761
+credit = "AivisSpeech:モデル名"
+license_checked = false
+
+[characters."美咲".styles]
+"強め" = 888753762

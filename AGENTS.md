@@ -97,6 +97,10 @@ Full texts: [`docs/en/adr/`](docs/en/adr/) / [`docs/ja/adr/`](docs/ja/adr/).
 
 ## Design references
 
+- [`docs/en/reference/agent-workflow.md`](docs/en/reference/agent-workflow.md) /
+  [`docs/ja/reference/agent-workflow.ja.md`](docs/ja/reference/agent-workflow.ja.md)
+  — the 10-step production procedure agents follow (precursor of the
+  radio-drama skill); sample material in `samples/`.
 - [`docs/en/reference/architecture.md`](docs/en/reference/architecture.md) /
   [`docs/ja/reference/architecture.ja.md`](docs/ja/reference/architecture.ja.md)
   — module map, data flow, error model, testing strategy.

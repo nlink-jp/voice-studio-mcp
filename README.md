@@ -160,6 +160,7 @@ credits file with your production.
 
 ## Documentation
 
+- [`docs/en/reference/agent-workflow.md`](docs/en/reference/agent-workflow.md) — the agent workflow guide (hand this to Claude Code / Cowork; sample material in [`samples/`](samples/))
 - [`docs/en/reference/setup.md`](docs/en/reference/setup.md) — setup guide (install → first production → troubleshooting)
 - [`docs/en/reference/architecture.md`](docs/en/reference/architecture.md) — architecture overview and decision index
 - [`docs/en/adr/`](docs/en/adr/) — seven ADRs recording the *why* behind non-obvious designs

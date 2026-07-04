@@ -157,6 +157,7 @@ VOICE_STUDIO_TEST_REAL_ENGINE=1 make test-e2e   # opt-in: 実エンジン
 
 ## ドキュメント
 
+- [`docs/ja/reference/agent-workflow.ja.md`](docs/ja/reference/agent-workflow.ja.md) — エージェント向けワークフロー手順書(Claude Code / Cowork にそのまま渡す。サンプル素材は [`samples/`](samples/))
 - [`docs/ja/reference/setup.ja.md`](docs/ja/reference/setup.ja.md) — セットアップガイド(導入→最初の制作→トラブルシューティング)
 - [`docs/ja/reference/architecture.ja.md`](docs/ja/reference/architecture.ja.md) — アーキテクチャ概観と設計判断の索引
 - [`docs/ja/adr/`](docs/ja/adr/) — 非自明な設計の「なぜ」を記録した ADR 7本

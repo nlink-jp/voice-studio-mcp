@@ -1,0 +1,9 @@
+# サンプル台本: 宵闇亭の夜 (samples/manuscript.ja.md の台本化例)
+# scene 1 = 出会い / scene 2 = 手紙
+{"id":10,"scene":1,"speaker":"ナレーター","text":"夜のとばりが下りるころ、宵闇亭の看板にひとつ、灯りがともった。","speed":0.95,"pause_after_ms":900}
+{"id":20,"scene":1,"speaker":"美咲","text":"いらっしゃいませ。……あら、珍しいお客さま。","pause_after_ms":500}
+{"id":30,"scene":1,"speaker":"ナレーター","text":"扉の前に立っていたのは、雨に濡れたひとりの旅人だった。店主の美咲はカウンターの奥から出てきて、乾いた布を差し出した。","speed":0.95,"pause_after_ms":800}
+{"id":40,"scene":2,"speaker":"ナレーター","text":"旅人は礼を言うと、鞄から一通の古い手紙を取り出した。それは、十年前にこの店を去った先代の店主、美咲の祖母が残したものだという。","speed":0.95,"pause_after_ms":700}
+{"id":50,"scene":2,"speaker":"美咲","text":"そんなの、聞いてないわ!","style":"強め","intensity":1.5,"speed":1.05,"pause_after_ms":600}
+{"id":60,"scene":2,"speaker":"ナレーター","text":"美咲の声が、静かな店内に響いた。旅人は目を伏せたまま、手紙をそっとカウンターに置いた。しばらくの沈黙ののち、美咲は小さく息をついた。","speed":0.95,"pause_after_ms":900}
+{"id":70,"scene":2,"speaker":"美咲","text":"……ごめんなさい。続きを、聞かせてください。","intensity":0.8,"speed":0.9,"pause_after_ms":1200}
