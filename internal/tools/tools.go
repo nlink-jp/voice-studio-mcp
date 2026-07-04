@@ -13,6 +13,7 @@ import (
 	"github.com/nlink-jp/voice-studio-mcp/internal/config"
 	"github.com/nlink-jp/voice-studio-mcp/internal/engine"
 	"github.com/nlink-jp/voice-studio-mcp/internal/job"
+	"github.com/nlink-jp/voice-studio-mcp/internal/master"
 	"github.com/nlink-jp/voice-studio-mcp/internal/mcpserver"
 	"github.com/nlink-jp/voice-studio-mcp/internal/synth"
 	"github.com/nlink-jp/voice-studio-mcp/internal/toolerr"
@@ -30,6 +31,8 @@ type Deps struct {
 	// to the per-request ctx would abort them the moment the tool call
 	// returns.
 	JobCtx context.Context
+	// Runner executes ffmpeg for the master tool (fake in tests).
+	Runner master.Runner
 	Logger *slog.Logger
 }
 
@@ -44,11 +47,15 @@ func Register(srv *mcpserver.Server, d *Deps) {
 	if d.JobCtx == nil {
 		d.JobCtx = context.Background()
 	}
+	if d.Runner == nil {
+		d.Runner = master.ExecRunner{}
+	}
 	registerListSpeakers(srv, d)
 	registerRegisterDictionary(srv, d)
 	registerSynthesizeLine(srv, d)
 	registerSynthesizeScript(srv, d)
 	registerCheckJob(srv, d)
+	registerMaster(srv, d)
 }
 
 // unmarshalStrict decodes tool arguments, rejecting unknown fields so agent
