@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] - 2026-07-04
 
 ### Added
 
@@ -52,3 +52,5 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Default mastering loudness target lowered from -16 LUFS to -18 LUFS
   (audiobook range) after listening feedback; configurable via
   `master.loudnorm_i`.
+
+[0.1.0]: https://github.com/nlink-jp/voice-studio-mcp/releases/tag/v0.1.0
