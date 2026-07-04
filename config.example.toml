@@ -1,0 +1,53 @@
+# voice-studio-mcp configuration
+#
+# Copy to ~/.config/voice-studio-mcp/config.toml and adjust.
+# Every key is optional; the values below are the built-in defaults.
+
+[server]
+log_level = "info"        # debug | info | warn | error
+log_file = ""             # empty = stderr only; logs NEVER go to stdout (MCP transport)
+
+[workspace]
+workspace_dir = "~/.voice-studio"   # one sub-directory per work (novel / episode)
+
+[engine]
+# "managed": spawn the AivisSpeech Engine as a child process and reap it on
+#            shutdown (attaches instead if something already answers at url).
+# "external": connect to url only; fail if nothing is listening.
+mode = "managed"
+url = "http://127.0.0.1:10101"
+command = "/Applications/AivisSpeech.app/Contents/Resources/AivisSpeech-Engine/run"
+args = []                            # e.g. ["--port", "10101"]
+startup_timeout_seconds = 180        # first model load can take minutes
+request_timeout_seconds = 300        # /synthesis on long text is slow
+shutdown_timeout_seconds = 10        # SIGTERM grace before SIGKILL
+
+[synthesis]
+concurrency = 1                      # parallel /synthesis calls (CPU inference: keep low)
+default_speed = 1.0                  # speedScale when a line has no "speed"
+default_intensity = 1.0              # intonationScale when a line has no "intensity"
+pre_phoneme_length = 0.1
+post_phoneme_length = 0.1
+output_sampling_rate = 44100         # forced on every line so master can concat losslessly
+
+[master]
+ffmpeg_path = "ffmpeg"               # absolute path or a name found in PATH
+loudnorm_i = -16.0                   # integrated loudness target (LUFS; podcast standard)
+loudnorm_tp = -1.5                   # true peak (dBTP)
+loudnorm_lra = 11.0                  # loudness range (LU)
+mp3_bitrate = "192k"
+m4b_bitrate = "128k"
+
+# Hand-maintained usage-terms metadata per voice model. The engine API does
+# not expose model licenses, so list_speakers reports models registered here
+# as license.status="verified" and everything else as "unverified".
+# Look up the speaker_uuid via the list_speakers tool.
+#
+# [[speaker_metadata]]
+# speaker_uuid = "e756b8e4-0000-0000-0000-000000000000"
+# name = "ExampleVoice"                  # display reference only; the join key is speaker_uuid
+# license = "ACML 1.0"
+# license_url = "https://hub.aivis-project.com/aivm-models/..."
+# credit = "AivisSpeech:ExampleVoice"
+# commercial_use = true
+# notes = ""
