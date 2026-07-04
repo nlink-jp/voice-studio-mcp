@@ -166,6 +166,11 @@ VOICE_STUDIO_TEST_REAL_ENGINE=1 make test-e2e   # opt-in: 実エンジン
 宣言あり・未確認)/ `unverified` を返します。公開音声に使ってよいのは
 `verified` のモデルだけです。
 
+レジストリは**ユーザーデータ**です: ユーザー config に置かれ、あなたの
+マシンの導入モデルとあなた自身の確認結果を反映するもので、共有リポジトリに
+コミットしてはいけません。speaker_uuid はモデル固有のグローバルIDなので、
+個人の dotfiles 等で自分のマシン間を同期するのは問題ありません。
+
 ## ドキュメント
 
 - [`docs/ja/reference/agent-workflow.ja.md`](docs/ja/reference/agent-workflow.ja.md) — エージェント向けワークフロー手順書(Claude Code / Cowork にそのまま渡す。サンプル素材は [`samples/`](samples/))

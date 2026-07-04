@@ -169,6 +169,12 @@ from any software license. The review workflow (ADR-0008):
 text present, unreviewed) / `unverified`; only `verified` models belong in
 published audio.
 
+The registry is **user data**: it lives in your user config, reflects the
+models installed on *your* machine and *your* review, and must not be
+committed to shared repositories. Since speaker_uuid is model-intrinsic
+(not machine-local), you may sync it across your own machines via personal
+dotfiles.
+
 ## Documentation
 
 - [`docs/en/reference/agent-workflow.md`](docs/en/reference/agent-workflow.md) — the agent workflow guide (hand this to Claude Code / Cowork; sample material in [`samples/`](samples/))

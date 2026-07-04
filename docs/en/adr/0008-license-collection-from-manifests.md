@@ -55,6 +55,22 @@ Split the roles: **collection is automated, verification stays human.**
 - `/aivm_models` responses are huge (147KB for 20 models, base64 icons);
   the client parses only the needed fields via selective structs.
 
+## Where the registry lives (data boundary)
+
+The verified registry (`[[speaker_metadata]]`) is **user data** and lives
+only in the user config (`~/.config/voice-studio-mcp/config.toml`). It is
+**never bundled into the product repository**:
+
+1. Installed models differ per environment (environment-specific data)
+2. "Verified" is the user's own judgment; shipping it in a repo would
+   distribute legal conclusions to third parties
+3. Terms change over time (which is why notes record the review date)
+
+Note that speaker_uuid is a **global, model-intrinsic ID**, not a
+machine-local one — so the registry is portable as a *personal* asset
+(the same model on another machine matches the same UUID). Syncing the
+config via personal dotfiles is a reasonable practice.
+
 ## Alternatives considered
 
 - **Fetching from the AivisHub API**: violates the local-only policy; the
