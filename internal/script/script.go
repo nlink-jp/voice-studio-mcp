@@ -106,6 +106,20 @@ func ParseFile(path string) ([]Line, []LineError, error) {
 	return lines, errs, nil
 }
 
+// Validate checks one structurally-decoded line (used by synthesize_line,
+// where the line arrives as tool arguments instead of a JSONL file).
+func (l Line) Validate() error {
+	ln := l
+	if ln.Scene == 0 {
+		ln.Scene = 1
+	}
+	if msg := validateLine(ln); msg != "" {
+		return toolerr.Newf(toolerr.CodeInvalidScript, "invalid line: %s", msg).
+			WithDetails(map[string]any{"line_id": l.ID})
+	}
+	return nil
+}
+
 func validateLine(ln Line) string {
 	switch {
 	case ln.ID <= 0:

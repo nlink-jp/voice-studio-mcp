@@ -32,6 +32,7 @@ func Register(srv *mcpserver.Server, d *Deps) {
 		d.Logger = slog.Default()
 	}
 	registerListSpeakers(srv, d)
+	registerSynthesizeLine(srv, d)
 }
 
 // unmarshalStrict decodes tool arguments, rejecting unknown fields so agent
