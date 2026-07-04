@@ -73,8 +73,44 @@ func New() *Mock {
 	mux.HandleFunc("/audio_query", m.handleAudioQuery)
 	mux.HandleFunc("/synthesis", m.handleSynthesis)
 	mux.HandleFunc("/user_dict_word", m.handleUserDictWord)
+	mux.HandleFunc("/aivm_models", m.handleAivmModels)
 	m.Server = httptest.NewServer(mux)
 	return m
+}
+
+// FixtureAivmModels is the /aivm_models payload: the narrator model declares
+// an ACML license plus a credit line in its description; the heroine model
+// carries free-form terms without a markdown heading and no credit pattern.
+var FixtureAivmModels = map[string]any{
+	"10000000-0000-0000-0000-00000000000a": map[string]any{
+		"is_private_model": false,
+		"manifest": map[string]any{
+			"uuid":        "10000000-0000-0000-0000-00000000000a",
+			"name":        "MockNarrator",
+			"description": "落ち着いた声のモデルです。クレジットして頂ける際は「AivisSpeech: MockNarrator」をご利用ください。",
+			"creators":    []string{"Mock Studio <mock@example.com>"},
+			"license":     "# Aivis Common Model License (ACML) 1.0\n\nこのライセンスは、AI 音声合成モデルの利用条件と制限を定めるものです。\n",
+		},
+		"speakers": []map[string]any{FixtureSpeakers[0]},
+	},
+	"10000000-0000-0000-0000-00000000000b": map[string]any{
+		"is_private_model": false,
+		"manifest": map[string]any{
+			"uuid":        "10000000-0000-0000-0000-00000000000b",
+			"name":        "MockHeroine",
+			"description": "ヒロイン向けのモデルです。",
+			"creators":    []string{"Mock Studio <mock@example.com>"},
+			"license":     "\n利用規約は https://example.com/terms を遵守すること。\n再配布は禁止。\n",
+		},
+		"speakers": []map[string]any{FixtureSpeakers[1]},
+	},
+}
+
+func (m *Mock) handleAivmModels(w http.ResponseWriter, r *http.Request) {
+	if !m.gate(w, r) {
+		return
+	}
+	writeJSON(w, FixtureAivmModels)
 }
 
 // Close shuts the mock down.

@@ -62,6 +62,21 @@ func (c *Client) Speakers(ctx context.Context) ([]Speaker, error) {
 	return out, nil
 }
 
+// AivmModels returns the installed AIVM voice models keyed by model UUID
+// (GET /aivm_models — AivisSpeech-specific; not part of the VOICEVOX API).
+// Manifests carry author-declared license text; see ADR-0008.
+func (c *Client) AivmModels(ctx context.Context) (map[string]AivmModel, error) {
+	body, err := c.do(ctx, http.MethodGet, "/aivm_models", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var out map[string]AivmModel
+	if err := json.Unmarshal(body, &out); err != nil {
+		return nil, toolerr.Newf(toolerr.CodeEngineRequest, "parse /aivm_models response: %v", err)
+	}
+	return out, nil
+}
+
 // AudioQuery builds a synthesis query for text with the given style
 // (POST /audio_query?text=...&speaker=<styleID>).
 func (c *Client) AudioQuery(ctx context.Context, text string, styleID int) (AudioQuery, error) {
