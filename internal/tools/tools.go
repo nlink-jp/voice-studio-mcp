@@ -45,6 +45,7 @@ func Register(srv *mcpserver.Server, d *Deps) {
 		d.JobCtx = context.Background()
 	}
 	registerListSpeakers(srv, d)
+	registerRegisterDictionary(srv, d)
 	registerSynthesizeLine(srv, d)
 	registerSynthesizeScript(srv, d)
 	registerCheckJob(srv, d)
