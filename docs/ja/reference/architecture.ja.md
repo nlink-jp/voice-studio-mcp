@@ -143,6 +143,7 @@ enqueue 前バリデーションを同期で完走させるのが要点: エー�
 | [0005](../adr/0005-in-memory-jobs.ja.md) | ジョブ非永続(回復はキャッシュ前提の再実行) |
 | [0006](../adr/0006-mastering-pipeline.ja.md) | concat demuxer+1パス loudnorm(-18 LUFS)、音量2段構え |
 | [0007](../adr/0007-license-metadata-as-data.ja.md) | モデル規約はデータとして人手記録、ツールが運ぶ |
+| [0008](../adr/0008-license-collection-from-manifests.ja.md) | 規約の収集は AIVM マニフェストから自動化(declared)、確認は人間(verified) |
 
 ## 8. スコープ外(v1 で意図的にやらないこと)
 

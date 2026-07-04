@@ -118,21 +118,24 @@ MCP クライアントから(またはエージェントへの指示として):
 
 1. AivisSpeech の GUI(設定 → 音声合成モデルの管理)で
    [AivisHub](https://hub.aivis-project.com/) からモデルを追加。
-2. **モデルページの利用規約を読み**、公開用途で使えるか確認する。
-3. 確認結果を config に記録:
+2. 宣言状況を収集する(モデルの AIVM マニフェストに規約全文が
+   埋め込まれていることが多い — ADR-0008):
 
-```toml
-[[speaker_metadata]]
-speaker_uuid = "..."         # list_speakers で確認
-name = "モデル名"
-license = "ACML 1.0"
-license_url = "https://hub.aivis-project.com/aivm-models/..."
-credit = "AivisSpeech:モデル名"
-commercial_use = true
+```sh
+dist/voice-studio-mcp licenses                       # 一覧(verified/declared/unverified)
+dist/voice-studio-mcp licenses --full <speaker_uuid> # 規約全文を読む
+dist/voice-studio-mcp licenses --toml                # config スケルトン生成
 ```
 
+3. `--toml` の出力を `~/.config/voice-studio-mcp/config.toml` に貼り、
+   **全文を読んで承諾したら** `license_url`(AivisHub のモデルページ)と
+   `commercial_use` を埋め、`REVIEW:` ノートを削除する。これで
+   `list_speakers` 上のステータスが `verified` になる。
 4. 作品で使う際は casting.toml の `license_checked = true` を立てる。
    立てないと `master` が `unverified_models` として警告する(意図的な摩擦)。
+
+> `declared` は「作者がそう宣言している」だけの状態で、公開の許可では
+> ない。公開音声に使ってよいのは人間が確認した `verified` のみ。
 
 ## 7. トラブルシューティング
 

@@ -146,6 +146,7 @@ test seam.
 | [0005](../adr/0005-in-memory-jobs.md) | No job persistence (recovery = cache-backed re-run) |
 | [0006](../adr/0006-mastering-pipeline.md) | Concat demuxer + one-pass loudnorm (-18 LUFS); two volume knobs |
 | [0007](../adr/0007-license-metadata-as-data.md) | Model terms as human-recorded data carried by the tools |
+| [0008](../adr/0008-license-collection-from-manifests.md) | License collection automated from AIVM manifests (declared); verification stays human (verified) |
 
 ## 8. Out of scope (deliberately, in v1)
 

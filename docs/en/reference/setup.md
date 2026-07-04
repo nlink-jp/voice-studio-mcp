@@ -117,22 +117,26 @@ From the MCP client (or as instructions to the agent):
 
 1. Add models from [AivisHub](https://hub.aivis-project.com/) via the
    AivisSpeech GUI (Settings → Manage voice models).
-2. **Read the model page's terms** and confirm they allow your use.
-3. Record the result in config:
+2. Collect what each model declares (AIVM manifests usually embed the full
+   license text — ADR-0008):
 
-```toml
-[[speaker_metadata]]
-speaker_uuid = "..."         # from list_speakers
-name = "ModelName"
-license = "ACML 1.0"
-license_url = "https://hub.aivis-project.com/aivm-models/..."
-credit = "AivisSpeech:ModelName"
-commercial_use = true
+```sh
+dist/voice-studio-mcp licenses                       # overview (verified/declared/unverified)
+dist/voice-studio-mcp licenses --full <speaker_uuid> # read the full terms
+dist/voice-studio-mcp licenses --toml                # generate config skeletons
 ```
 
+3. Paste the `--toml` output into `~/.config/voice-studio-mcp/config.toml`;
+   **once you have read and accepted the terms**, fill `license_url` (the
+   AivisHub model page) and `commercial_use`, and delete the `REVIEW:`
+   note. The speaker then reports `verified` in `list_speakers`.
 4. When casting the model in a work, set `license_checked = true` in
    casting.toml — otherwise `master` flags it under `unverified_models`
    (intentional friction).
+
+> `declared` only means "the author says so" — it is not publishing
+> clearance. Only human-reviewed `verified` models belong in published
+> audio.
 
 ## 7. Troubleshooting
 

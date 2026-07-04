@@ -39,9 +39,11 @@ approval**:
 
 - Narrator: a calm, steady style
 - Characters: voices matching gender / age / personality
-- If a model has `license.status: "unverified"`, say so explicitly and ask
-  the user to review its terms (and suggest recording the result in the
-  `[[speaker_metadata]]` config)
+- If a model's `license.status` is anything but `verified`, say so
+  explicitly and ask the user to review its terms. For `declared` models,
+  quote the declared license name and point at
+  `voice-studio-mcp licenses --full <uuid>` (read) and `licenses --toml`
+  (record) — see ADR-0008
 
 After approval, write `casting.toml` in the workspace root (format: see the
 README). Set `license_checked = true` only for confirmed characters.

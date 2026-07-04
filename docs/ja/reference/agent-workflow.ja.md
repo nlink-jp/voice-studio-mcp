@@ -39,9 +39,10 @@ AivisSpeech の導入状況を確認(セットアップは
 
 - ナレーター: 落ち着いたスタイルの声
 - 各キャラクター: 性別・年齢感・性格に合う声とスタイル
-- `license.status: "unverified"` のモデルを使う場合はその旨を明示し、
-  規約確認をユーザーに促す(確認できたら config の `[[speaker_metadata]]`
-  への記録を提案)
+- `license.status` が `verified` 以外のモデルを使う場合はその旨を明示し、
+  規約確認をユーザーに促す。`declared` なら宣言済みライセンス名を添え、
+  `voice-studio-mcp licenses --full <uuid>` で全文を読み `licenses --toml`
+  で config 記録を作る手順を案内する(ADR-0008)
 
 承認後、workspace 直下に `casting.toml` を書く(形式は README 参照)。
 確認が取れたキャラクターのみ `license_checked = true` にする。

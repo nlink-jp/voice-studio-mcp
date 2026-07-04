@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- License collection workflow (ADR-0008): the engine's `/aivm_models`
+  endpoint exposes author-declared license text embedded in AIVM
+  manifests, so collection is now automated while verification stays
+  human.
+  - `list_speakers` reports a three-valued `license.status`:
+    `verified` (human-reviewed config entry) / `declared` (manifest
+    text present, name and credit extracted heuristically) /
+    `unverified`. Falls back gracefully on engines without
+    `/aivm_models`.
+  - New `licenses` subcommand: overview table, `--full <speaker_uuid>`
+    to read the full declared terms, and `--toml` to generate
+    `[[speaker_metadata]]` skeletons (with a REVIEW note) for
+    unreviewed speakers.
+
 ## [0.1.0] - 2026-07-04
 
 ### Added

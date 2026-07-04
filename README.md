@@ -18,9 +18,10 @@ agent-authored script into mastered audio. No cloud APIs, no credentials.
 
 ## Features
 
-- **Speaker catalog with license metadata** — the engine API does not
-  expose model usage terms, so a hand-maintained config section is joined
-  in; unreviewed models are flagged `unverified` before you publish.
+- **Speaker catalog with license metadata** — author-declared license text
+  is collected automatically from each model's AIVM manifest (`declared`),
+  and human-reviewed config entries mark models `verified`; the `licenses`
+  subcommand turns declarations into reviewable config skeletons.
 - **Pronunciation dictionaries** — register proper-noun readings per work
   so character names are never misread.
 - **Batch synthesis with a content-hash cache** — edit three lines of a
@@ -70,6 +71,7 @@ sensible defaults.
 |---------|-------------|
 | `serve` | Start the MCP stdio server (default when no subcommand is given) |
 | `doctor` | Diagnose the environment (config, engine, ffmpeg, workspace dir) |
+| `licenses` | Collect voice-model license declarations for review (`--full <uuid>` full text, `--toml` config skeleton) |
 | `version` | Print the version |
 
 ## Tools
@@ -153,17 +155,26 @@ VOICE_STUDIO_TEST_REAL_ENGINE=1 make test-e2e   # opt-in: real engine
 ## License notes
 
 The server code is MIT. **Voice models have their own terms**, separate
-from any software license: check each model (AivisHub etc.) before
-publishing audio, record the result in `casting.toml`
-(`license_checked`) and `[[speaker_metadata]]`, and ship the generated
-credits file with your production.
+from any software license. The review workflow (ADR-0008):
+
+1. `voice-studio-mcp licenses` — see what each installed model declares
+2. `voice-studio-mcp licenses --full <speaker_uuid>` — read the full terms
+3. `voice-studio-mcp licenses --toml` — generate `[[speaker_metadata]]`
+   skeletons; fill `license_url` / `commercial_use` and delete the REVIEW
+   note once accepted
+4. Set `license_checked = true` in `casting.toml` per work, and ship the
+   generated credits file with your production
+
+`list_speakers` reports `verified` (human-reviewed) / `declared` (manifest
+text present, unreviewed) / `unverified`; only `verified` models belong in
+published audio.
 
 ## Documentation
 
 - [`docs/en/reference/agent-workflow.md`](docs/en/reference/agent-workflow.md) — the agent workflow guide (hand this to Claude Code / Cowork; sample material in [`samples/`](samples/))
 - [`docs/en/reference/setup.md`](docs/en/reference/setup.md) — setup guide (install → first production → troubleshooting)
 - [`docs/en/reference/architecture.md`](docs/en/reference/architecture.md) — architecture overview and decision index
-- [`docs/en/adr/`](docs/en/adr/) — seven ADRs recording the *why* behind non-obvious designs
+- [`docs/en/adr/`](docs/en/adr/) — eight ADRs recording the *why* behind non-obvious designs
 - [`docs/en/voice-studio-mcp-rfp.md`](docs/en/voice-studio-mcp-rfp.md) — the original RFP
 - 日本語版: [`docs/ja/`](docs/ja/) (セットアップ / アーキテクチャ / ADR / RFP)
 

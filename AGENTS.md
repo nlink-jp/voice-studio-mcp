@@ -92,6 +92,9 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
 - **ADR-0005**: jobs in-memory only; recovery = cache-backed re-run
 - **ADR-0006**: concat demuxer + 1-pass loudnorm (-18 LUFS); two volume knobs
 - **ADR-0007**: voice-model terms as human-recorded data
+- **ADR-0008**: license collection automated from AIVM manifests
+  (`/aivm_models` → status "declared"); verification stays human
+  ("verified" via `[[speaker_metadata]]`; `licenses` subcommand)
 
 Full texts: [`docs/en/adr/`](docs/en/adr/) / [`docs/ja/adr/`](docs/ja/adr/).
 

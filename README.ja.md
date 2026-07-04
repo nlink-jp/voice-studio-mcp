@@ -16,9 +16,10 @@ MCPサーバーで、エージェントが書いた台本を完成音声に変�
 
 ## 特徴
 
-- **規約メタデータ付き話者カタログ** — エンジンAPIはモデルの利用規約を
-  返さないため、人手管理のconfigセクションを突合。未確認モデルは
-  `unverified` として公開前に警告します。
+- **規約メタデータ付き話者カタログ** — 各モデルの AIVM マニフェストから
+  作者宣言のライセンス全文を自動収集(`declared`)し、人間が確認した
+  config 記録を `verified` として区別。`licenses` サブコマンドが宣言を
+  確認可能な config スケルトンに変換します。
 - **読み辞書** — 作品固有の固有名詞の読みを登録し、キャラクター名の
   誤読を防ぎます。
 - **コンテンツハッシュキャッシュ付き一括合成** — 200行の台本のうち
@@ -67,6 +68,7 @@ MCPクライアント(例: Claude Code)への登録:
 |---------|------|
 | `serve` | MCP stdioサーバーを起動(サブコマンド省略時の既定) |
 | `doctor` | 環境診断(config・エンジン・ffmpeg・workspaceディレクトリ) |
+| `licenses` | 音声モデルのライセンス宣言を収集・確認(`--full <uuid>` 全文表示、`--toml` configスケルトン生成) |
 | `version` | バージョン表示 |
 
 ## ツール
@@ -150,17 +152,26 @@ VOICE_STUDIO_TEST_REAL_ENGINE=1 make test-e2e   # opt-in: 実エンジン
 ## ライセンスに関する注意
 
 サーバーコードはMITです。**音声モデルにはソフトウェアライセンスとは
-別の利用規約があります**: 音声を公開する前に各モデル(AivisHub等)の
-規約を確認し、結果を `casting.toml`(`license_checked`)と
-`[[speaker_metadata]]` に記録し、生成されたクレジットファイルを
-成果物に添付してください。
+別の利用規約があります**。確認ワークフロー(ADR-0008):
+
+1. `voice-studio-mcp licenses` — 導入済み各モデルの宣言状況を一覧
+2. `voice-studio-mcp licenses --full <speaker_uuid>` — 規約全文を読む
+3. `voice-studio-mcp licenses --toml` — `[[speaker_metadata]]` スケルトンを
+   生成。`license_url` / `commercial_use` を埋め、承諾したら REVIEW ノートを
+   削除
+4. 作品ごとに `casting.toml` の `license_checked = true` を立て、生成された
+   クレジットファイルを成果物に添付
+
+`list_speakers` は `verified`(人間確認済み)/ `declared`(マニフェストに
+宣言あり・未確認)/ `unverified` を返します。公開音声に使ってよいのは
+`verified` のモデルだけです。
 
 ## ドキュメント
 
 - [`docs/ja/reference/agent-workflow.ja.md`](docs/ja/reference/agent-workflow.ja.md) — エージェント向けワークフロー手順書(Claude Code / Cowork にそのまま渡す。サンプル素材は [`samples/`](samples/))
 - [`docs/ja/reference/setup.ja.md`](docs/ja/reference/setup.ja.md) — セットアップガイド(導入→最初の制作→トラブルシューティング)
 - [`docs/ja/reference/architecture.ja.md`](docs/ja/reference/architecture.ja.md) — アーキテクチャ概観と設計判断の索引
-- [`docs/ja/adr/`](docs/ja/adr/) — 非自明な設計の「なぜ」を記録した ADR 7本
+- [`docs/ja/adr/`](docs/ja/adr/) — 非自明な設計の「なぜ」を記録した ADR 8本
 - [`docs/ja/voice-studio-mcp-rfp.ja.md`](docs/ja/voice-studio-mcp-rfp.ja.md) — RFP
 - English: [`docs/en/`](docs/en/)(setup / architecture / ADR / RFP)
 
