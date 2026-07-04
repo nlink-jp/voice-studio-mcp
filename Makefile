@@ -52,7 +52,8 @@ package: build-all
 		$(eval STAGE := $(BIN_DIR)/_pkg-$(OS)-$(ARCH)) \
 		rm -rf $(STAGE) && mkdir -p $(STAGE) ; \
 		cp $(BIN) $(STAGE)/$(BINARY)$(EXT) ; \
-		zip -j $(ZIP) $(STAGE)/$(BINARY)$(EXT) ; \
+		cp README.md $(STAGE)/README.md ; \
+		zip -j $(ZIP) $(STAGE)/$(BINARY)$(EXT) $(STAGE)/README.md ; \
 		rm -rf $(STAGE) ;)
 	@scripts/notarize-darwin.sh $(BIN_DIR)/$(BINARY)-$(VERSION)-darwin-arm64.zip "$(NOTARY_PROFILE)"
 
