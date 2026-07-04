@@ -39,6 +39,8 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   (`VOICE_STUDIO_TEST_REAL_ENGINE=1`).
 - Per-line `volume` (engine `volumeScale`) with `synthesis.default_volume`
   config; part of the synthesis cache key.
+- Documentation set: architecture reference, setup guide, and seven ADRs
+  recording design rationale, mirrored in `docs/{en,ja}/`.
 
 ### Changed
 

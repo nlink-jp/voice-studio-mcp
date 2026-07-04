@@ -160,8 +160,11 @@ credits file with your production.
 
 ## Documentation
 
-- `docs/en/voice-studio-mcp-rfp.md` — the original RFP (design decisions)
-- `docs/ja/voice-studio-mcp-rfp.ja.md` — 日本語版 RFP
+- [`docs/en/reference/setup.md`](docs/en/reference/setup.md) — setup guide (install → first production → troubleshooting)
+- [`docs/en/reference/architecture.md`](docs/en/reference/architecture.md) — architecture overview and decision index
+- [`docs/en/adr/`](docs/en/adr/) — seven ADRs recording the *why* behind non-obvious designs
+- [`docs/en/voice-studio-mcp-rfp.md`](docs/en/voice-studio-mcp-rfp.md) — the original RFP
+- 日本語版: [`docs/ja/`](docs/ja/) (セットアップ / アーキテクチャ / ADR / RFP)
 
 ## License
 

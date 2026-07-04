@@ -83,8 +83,25 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
   in config and `license_checked` in casting.toml; `master` warns on
   unverified models and generates the credits file.
 
+## ADR cheat sheet
+
+- **ADR-0001**: AivisSpeech Engine only in v1 (SBV2 quality, LGPL, official macOS)
+- **ADR-0002**: managed engine child process, attach-first
+- **ADR-0003**: AudioQuery = map passthrough; only sampling rate forced
+- **ADR-0004**: content-hash cache; pauses excluded, engine version included
+- **ADR-0005**: jobs in-memory only; recovery = cache-backed re-run
+- **ADR-0006**: concat demuxer + 1-pass loudnorm (-18 LUFS); two volume knobs
+- **ADR-0007**: voice-model terms as human-recorded data
+
+Full texts: [`docs/en/adr/`](docs/en/adr/) / [`docs/ja/adr/`](docs/ja/adr/).
+
 ## Design references
 
+- [`docs/en/reference/architecture.md`](docs/en/reference/architecture.md) /
+  [`docs/ja/reference/architecture.ja.md`](docs/ja/reference/architecture.ja.md)
+  — module map, data flow, error model, testing strategy.
+- [`docs/en/reference/setup.md`](docs/en/reference/setup.md) /
+  [`docs/ja/reference/setup.ja.md`](docs/ja/reference/setup.ja.md) — setup guide.
 - [`docs/ja/voice-studio-mcp-rfp.ja.md`](docs/ja/voice-studio-mcp-rfp.ja.md) /
   [`docs/en/voice-studio-mcp-rfp.md`](docs/en/voice-studio-mcp-rfp.md) —
   approved RFP; canonical source for scope decisions (v1: AivisSpeech only,

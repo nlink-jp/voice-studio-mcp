@@ -157,8 +157,11 @@ VOICE_STUDIO_TEST_REAL_ENGINE=1 make test-e2e   # opt-in: 実エンジン
 
 ## ドキュメント
 
-- `docs/ja/voice-studio-mcp-rfp.ja.md` — RFP(設計判断の正)
-- `docs/en/voice-studio-mcp-rfp.md` — English RFP
+- [`docs/ja/reference/setup.ja.md`](docs/ja/reference/setup.ja.md) — セットアップガイド(導入→最初の制作→トラブルシューティング)
+- [`docs/ja/reference/architecture.ja.md`](docs/ja/reference/architecture.ja.md) — アーキテクチャ概観と設計判断の索引
+- [`docs/ja/adr/`](docs/ja/adr/) — 非自明な設計の「なぜ」を記録した ADR 7本
+- [`docs/ja/voice-studio-mcp-rfp.ja.md`](docs/ja/voice-studio-mcp-rfp.ja.md) — RFP
+- English: [`docs/en/`](docs/en/)(setup / architecture / ADR / RFP)
 
 ## License
 
