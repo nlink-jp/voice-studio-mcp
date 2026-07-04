@@ -8,13 +8,17 @@ import (
 	"github.com/nlink-jp/voice-studio-mcp/internal/mcpserver"
 )
 
-// LicenseInfo is the usage-terms block attached to each speaker. It comes
-// from the hand-maintained [[speaker_metadata]] config section; the engine
-// API itself does not expose model terms, so anything not registered there
-// is reported as "unverified" and must be checked by a human before
-// publishing audio that uses the voice.
+// LicenseInfo is the usage-terms block attached to each speaker.
+//
+// Status semantics (ADR-0008):
+//   - "verified":   a human reviewed the terms and recorded them in the
+//     [[speaker_metadata]] config section — safe to rely on.
+//   - "declared":   the model's AIVM manifest embeds author-declared license
+//     text (name/credit below are extracted from it); a human still has to
+//     read it before publishing. Use the `licenses` subcommand.
+//   - "unverified": no config entry and no manifest declaration.
 type LicenseInfo struct {
-	Status        string `json:"status"` // "verified" | "unverified"
+	Status        string `json:"status"` // "verified" | "declared" | "unverified"
 	Name          string `json:"name,omitempty"`
 	URL           string `json:"url,omitempty"`
 	Credit        string `json:"credit,omitempty"`
@@ -38,8 +42,9 @@ func registerListSpeakers(srv *mcpserver.Server, d *Deps) {
 	srv.RegisterTool(mcpserver.Tool{
 		Name: "list_speakers",
 		Description: "List all installed voice models (speakers) with their styles and usage-terms metadata. " +
-			"Use the returned style ids in the casting table. Speakers with license.status=\"unverified\" " +
-			"need human license review before publishing audio that uses them.",
+			"Use the returned style ids in the casting table. license.status is \"verified\" (human-reviewed " +
+			"config entry), \"declared\" (license text embedded in the model manifest — run the `licenses` " +
+			"subcommand to review it), or \"unverified\". Only \"verified\" models should be used in published audio.",
 		InputSchema: json.RawMessage(`{"type":"object","properties":{},"additionalProperties":false}`),
 	}, func(ctx context.Context, args json.RawMessage) (any, error) {
 		var in struct{}
@@ -54,6 +59,7 @@ func registerListSpeakers(srv *mcpserver.Server, d *Deps) {
 		if err != nil {
 			return nil, err
 		}
+		declared := declaredLicenses(ctx, d)
 		out := listSpeakersOut{
 			Engine: map[string]string{
 				"version": version,
@@ -63,6 +69,10 @@ func registerListSpeakers(srv *mcpserver.Server, d *Deps) {
 		}
 		for _, sp := range speakers {
 			lic := LicenseInfo{Status: "unverified"}
+			if decl, ok := declared[sp.SpeakerUUID]; ok {
+				lic = decl
+			}
+			// A human-reviewed config entry always wins over a declaration.
 			if m := d.Cfg.MetadataFor(sp.SpeakerUUID); m != nil {
 				lic = LicenseInfo{
 					Status:        "verified",
@@ -82,4 +92,31 @@ func registerListSpeakers(srv *mcpserver.Server, d *Deps) {
 		}
 		return out, nil
 	})
+}
+
+// declaredLicenses joins AIVM manifests to speaker UUIDs. Best-effort: the
+// endpoint is AivisSpeech-specific, so any failure just means no
+// declarations (a VOICEVOX engine would land here, for instance).
+func declaredLicenses(ctx context.Context, d *Deps) map[string]LicenseInfo {
+	models, err := d.Client.AivmModels(ctx)
+	if err != nil {
+		d.Logger.Debug("aivm_models unavailable; skipping declared licenses", "err", err)
+		return nil
+	}
+	out := make(map[string]LicenseInfo)
+	for _, model := range models {
+		name := model.Manifest.LicenseName()
+		if name == "" {
+			continue
+		}
+		for _, sp := range model.Speakers {
+			out[sp.SpeakerUUID] = LicenseInfo{
+				Status: "declared",
+				Name:   name,
+				Credit: model.Manifest.CreditLine(),
+				Notes:  "declared in the model's AIVM manifest — review the full text (`voice-studio-mcp licenses --full " + sp.SpeakerUUID + "`) and record it in [[speaker_metadata]] before publishing",
+			}
+		}
+	}
+	return out
 }

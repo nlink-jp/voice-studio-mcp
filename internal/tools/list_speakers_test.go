@@ -144,14 +144,83 @@ func TestListSpeakers(t *testing.T) {
 	if len(out.Speakers) != 2 {
 		t.Fatalf("speakers: %d", len(out.Speakers))
 	}
+	// Config entry wins over the manifest declaration.
 	if out.Speakers[0].License.Status != "verified" || out.Speakers[0].License.Credit != "AivisSpeech:MockNarrator" {
 		t.Errorf("registered speaker license: %+v", out.Speakers[0].License)
 	}
-	if out.Speakers[1].License.Status != "unverified" {
+	// No config entry, but the mock heroine model declares license text in
+	// its AIVM manifest.
+	if out.Speakers[1].License.Status != "declared" {
 		t.Errorf("unregistered speaker license: %+v", out.Speakers[1].License)
 	}
 	if len(out.Speakers[0].Styles) != 2 || out.Speakers[0].Styles[0].ID != enginetest.StyleNarratorNormal {
 		t.Errorf("styles: %+v", out.Speakers[0].Styles)
+	}
+}
+
+// TestListSpeakersDeclaredFromManifest checks the declared-status join when
+// no config metadata exists at all.
+func TestListSpeakersDeclaredFromManifest(t *testing.T) {
+	h := newHarness(t)
+	body, isErr := h.callTool("list_speakers", map[string]any{})
+	if isErr {
+		t.Fatalf("unexpected tool error: %s", body)
+	}
+	var out struct {
+		Speakers []struct {
+			Name    string `json:"name"`
+			License struct {
+				Status string `json:"status"`
+				Name   string `json:"name"`
+				Credit string `json:"credit"`
+				Notes  string `json:"notes"`
+			} `json:"license"`
+		} `json:"speakers"`
+	}
+	if err := json.Unmarshal(body, &out); err != nil {
+		t.Fatal(err)
+	}
+	narr := out.Speakers[0].License
+	if narr.Status != "declared" || narr.Name != "Aivis Common Model License (ACML) 1.0" {
+		t.Errorf("narrator declared license: %+v", narr)
+	}
+	if narr.Credit != "AivisSpeech: MockNarrator" {
+		t.Errorf("narrator credit extraction: %q", narr.Credit)
+	}
+	if !strings.Contains(narr.Notes, "licenses --full") {
+		t.Errorf("notes should point at the licenses subcommand: %q", narr.Notes)
+	}
+	// Free-form terms (no heading) still surface as declared with the first line.
+	hero := out.Speakers[1].License
+	if hero.Status != "declared" || !strings.Contains(hero.Name, "example.com/terms") {
+		t.Errorf("heroine declared license: %+v", hero)
+	}
+	if hero.Credit != "" {
+		t.Errorf("heroine has no credit pattern, got %q", hero.Credit)
+	}
+}
+
+// TestListSpeakersSurvivesMissingAivmEndpoint pins the best-effort behavior:
+// a failing /aivm_models must not fail the tool.
+func TestListSpeakersSurvivesMissingAivmEndpoint(t *testing.T) {
+	h := newHarness(t)
+	h.mock.FailNext("/aivm_models", 404)
+	body, isErr := h.callTool("list_speakers", map[string]any{})
+	if isErr {
+		t.Fatalf("tool must not fail when /aivm_models is unavailable: %s", body)
+	}
+	var out struct {
+		Speakers []struct {
+			License struct {
+				Status string `json:"status"`
+			} `json:"license"`
+		} `json:"speakers"`
+	}
+	if err := json.Unmarshal(body, &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Speakers[0].License.Status != "unverified" {
+		t.Errorf("expected unverified fallback: %+v", out.Speakers[0].License)
 	}
 }
 
