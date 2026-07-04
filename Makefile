@@ -17,7 +17,7 @@ NOTARY_PROFILE    ?= nlink-jp-notary
 PLATFORMS := \
 	darwin/arm64
 
-.PHONY: build build-all package test test-e2e clean help
+.PHONY: build build-all package test test-e2e install-skill uninstall-skill clean help
 
 ## build: Build binary for the current OS/Arch → ./dist/voice-studio-mcp
 build:
@@ -64,6 +64,19 @@ test:
 ## test-e2e: Run e2e tests against a freshly built binary (mock engine; no AivisSpeech needed)
 test-e2e: build
 	VOICE_STUDIO_TEST_BINARY=$(abspath $(BIN_DIR)/$(BINARY)) go test -tags e2e ./e2e/...
+
+SKILLS_DEST ?= $(HOME)/.claude/skills
+
+## install-skill: Install the bundled radio-drama skill into ~/.claude/skills
+install-skill:
+	@mkdir -p $(SKILLS_DEST)
+	cp -R skills/radio-drama $(SKILLS_DEST)/
+	@echo "installed: radio-drama -> $(SKILLS_DEST)/radio-drama"
+
+## uninstall-skill: Remove the installed radio-drama skill
+uninstall-skill:
+	rm -rf $(SKILLS_DEST)/radio-drama
+	@echo "removed: $(SKILLS_DEST)/radio-drama"
 
 ## clean: Remove build artifacts
 clean:

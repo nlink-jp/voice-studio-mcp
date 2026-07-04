@@ -21,6 +21,10 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     to read the full declared terms, and `--toml` to generate
     `[[speaker_metadata]]` skeletons (with a REVIEW note) for
     unreviewed speakers.
+- Bundled `radio-drama` Claude Code skill (ADR-0009): the operational
+  form of the agent workflow, installed via `make install-skill`;
+  `skills/skills_test.go` pins skill/server coherence (tool names,
+  error codes, schema fields) so they cannot drift.
 
 ## [0.1.0] - 2026-07-04
 

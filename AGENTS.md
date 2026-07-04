@@ -95,6 +95,10 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
 - **ADR-0008**: license collection automated from AIVM manifests
   (`/aivm_models` → status "declared"); verification stays human
   ("verified" via `[[speaker_metadata]]`; `licenses` subcommand)
+- **ADR-0009**: radio-drama skill bundled in `skills/` (installed via
+  `make install-skill`); `skills/skills_test.go` pins skill/server
+  coherence — update the skill when tools, error codes, or the schema
+  change, or the build breaks
 
 Full texts: [`docs/en/adr/`](docs/en/adr/) / [`docs/ja/adr/`](docs/ja/adr/).
 

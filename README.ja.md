@@ -85,6 +85,21 @@ MCPクライアント(例: Claude Code)への登録:
 ツールの返却はパス・件数・尺のコンパクトなJSONサマリのみで、音声
 バイト列は返しません。
 
+## Claude Code スキル(同梱)
+
+リポジトリに **radio-drama** スキルを同梱しています — エージェント
+ワークフロー(原稿→キャスティング→辞書→合成→リテイク→マスタリング、
+人間チェックポイント必須)の運用形です:
+
+```sh
+make install-skill      # → ~/.claude/skills/radio-drama
+```
+
+導入後、Claude Code / Cowork に *「/radio-drama samples/manuscript.ja.md」*
+のように依頼できます。スキルを別リポジトリでなくここに同梱するのは、
+本サーバーのスキーマ・ツールと常に一致させるためです —
+`skills/skills_test.go` が整合を機械検査します(ADR-0009)。
+
 ### 台本JSONL(canonicalスキーマ)
 
 1行=1発話。このスキーマがエージェント側スキルとの契約です:
@@ -176,7 +191,7 @@ VOICE_STUDIO_TEST_REAL_ENGINE=1 make test-e2e   # opt-in: 実エンジン
 - [`docs/ja/reference/agent-workflow.ja.md`](docs/ja/reference/agent-workflow.ja.md) — エージェント向けワークフロー手順書(Claude Code / Cowork にそのまま渡す。サンプル素材は [`samples/`](samples/))
 - [`docs/ja/reference/setup.ja.md`](docs/ja/reference/setup.ja.md) — セットアップガイド(導入→最初の制作→トラブルシューティング)
 - [`docs/ja/reference/architecture.ja.md`](docs/ja/reference/architecture.ja.md) — アーキテクチャ概観と設計判断の索引
-- [`docs/ja/adr/`](docs/ja/adr/) — 非自明な設計の「なぜ」を記録した ADR 8本
+- [`docs/ja/adr/`](docs/ja/adr/) — 非自明な設計の「なぜ」を記録した ADR 9本
 - [`docs/ja/voice-studio-mcp-rfp.ja.md`](docs/ja/voice-studio-mcp-rfp.ja.md) — RFP
 - English: [`docs/en/`](docs/en/)(setup / architecture / ADR / RFP)
 

@@ -88,6 +88,21 @@ sensible defaults.
 Tool results are compact JSON summaries (paths, counts, durations) —
 audio bytes are never returned to the client.
 
+## Claude Code skill (bundled)
+
+The repository bundles the **radio-drama** skill — the operational form of
+the agent workflow (manuscript → casting → dictionary → synthesis → retakes
+→ mastering, with mandatory human checkpoints):
+
+```sh
+make install-skill      # → ~/.claude/skills/radio-drama
+```
+
+Then ask Claude Code / Cowork: *"/radio-drama samples/manuscript.ja.md"*.
+The skill ships here (not in a separate repo) so it always matches this
+server's schema and tools — `skills/skills_test.go` enforces that
+(ADR-0009).
+
 ### Script JSONL (canonical schema)
 
 One utterance per line; the schema is the contract for agent-side skills:
@@ -180,7 +195,7 @@ dotfiles.
 - [`docs/en/reference/agent-workflow.md`](docs/en/reference/agent-workflow.md) — the agent workflow guide (hand this to Claude Code / Cowork; sample material in [`samples/`](samples/))
 - [`docs/en/reference/setup.md`](docs/en/reference/setup.md) — setup guide (install → first production → troubleshooting)
 - [`docs/en/reference/architecture.md`](docs/en/reference/architecture.md) — architecture overview and decision index
-- [`docs/en/adr/`](docs/en/adr/) — eight ADRs recording the *why* behind non-obvious designs
+- [`docs/en/adr/`](docs/en/adr/) — nine ADRs recording the *why* behind non-obvious designs
 - [`docs/en/voice-studio-mcp-rfp.md`](docs/en/voice-studio-mcp-rfp.md) — the original RFP
 - 日本語版: [`docs/ja/`](docs/ja/) (セットアップ / アーキテクチャ / ADR / RFP)
 
