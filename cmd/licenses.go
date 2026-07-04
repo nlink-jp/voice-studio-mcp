@@ -65,9 +65,10 @@ Workflow (ADR-0008 — collection is automated, verification stays human):
 
 // licenseRow is one speaker's collected state.
 type licenseRow struct {
-	Speaker  engine.Speaker
-	Manifest *engine.AivmManifest // nil when no AIVM declaration exists
-	Verified *config.SpeakerMetadata
+	Speaker      engine.Speaker
+	Manifest     *engine.AivmManifest // nil when no AIVM declaration exists
+	DeclaredText string               // per-speaker policy, falling back to the manifest license
+	Verified     *config.SpeakerMetadata
 }
 
 // collectRows joins /speakers, /aivm_models, and the config registry.
@@ -77,31 +78,38 @@ func collectRows(ctx context.Context, client *engine.Client, cfg *config.Config)
 		return nil, err
 	}
 	manifests := map[string]*engine.AivmManifest{}
+	declaredTexts := map[string]string{}
 	if models, err := client.AivmModels(ctx); err == nil {
 		for _, model := range models {
 			m := model.Manifest
 			for _, sp := range model.Speakers {
-				manifests[sp.SpeakerUUID] = &m
+				manifests[sp.Speaker.SpeakerUUID] = &m
+				declaredTexts[sp.Speaker.SpeakerUUID] = model.LicenseTextFor(sp)
 			}
 		}
 	}
 	rows := make([]licenseRow, 0, len(speakers))
 	for _, sp := range speakers {
 		rows = append(rows, licenseRow{
-			Speaker:  sp,
-			Manifest: manifests[sp.SpeakerUUID],
-			Verified: cfg.MetadataFor(sp.SpeakerUUID),
+			Speaker:      sp,
+			Manifest:     manifests[sp.SpeakerUUID],
+			DeclaredText: declaredTexts[sp.SpeakerUUID],
+			Verified:     cfg.MetadataFor(sp.SpeakerUUID),
 		})
 	}
 	sort.Slice(rows, func(i, j int) bool { return rows[i].Speaker.Name < rows[j].Speaker.Name })
 	return rows, nil
 }
 
+func (r licenseRow) declaredName() string {
+	return engine.LicenseNameFromText(r.DeclaredText)
+}
+
 func (r licenseRow) status() string {
 	switch {
 	case r.Verified != nil:
 		return "verified"
-	case r.Manifest != nil && r.Manifest.LicenseName() != "":
+	case r.declaredName() != "":
 		return "declared"
 	default:
 		return "unverified"
@@ -118,10 +126,9 @@ func licensesTable(ctx context.Context, out io.Writer, client *engine.Client, cf
 	for _, r := range rows {
 		st := r.status()
 		counts[st]++
-		declared := ""
+		declared := r.declaredName()
 		if r.Manifest != nil {
-			declared = r.Manifest.LicenseName()
-			if credit := r.Manifest.CreditLine(); credit != "" {
+			if credit := r.Manifest.CreditLine(); credit != "" && declared != "" {
 				declared += "  (credit: " + credit + ")"
 			}
 		}
@@ -154,9 +161,8 @@ func licensesSkeleton(ctx context.Context, out io.Writer, client *engine.Client,
 		if r.Verified != nil {
 			continue // already reviewed; don't emit duplicates
 		}
-		license, credit := "", ""
+		license, credit := r.declaredName(), ""
 		if r.Manifest != nil {
-			license = r.Manifest.LicenseName()
 			credit = r.Manifest.CreditLine()
 		}
 		if credit == "" {
@@ -185,22 +191,22 @@ func licensesFullText(ctx context.Context, out io.Writer, client *engine.Client,
 	}
 	for _, model := range models {
 		for _, sp := range model.Speakers {
-			if sp.SpeakerUUID != speakerUUID && model.Manifest.UUID != speakerUUID {
+			if sp.Speaker.SpeakerUUID != speakerUUID && model.Manifest.UUID != speakerUUID {
 				continue
 			}
 			m := model.Manifest
 			fmt.Fprintf(out, "Model:    %s (aivm uuid %s)\n", m.Name, m.UUID)
-			fmt.Fprintf(out, "Speaker:  %s (%s)\n", sp.Name, sp.SpeakerUUID)
+			fmt.Fprintf(out, "Speaker:  %s (%s)\n", sp.Speaker.Name, sp.Speaker.SpeakerUUID)
 			if len(m.Creators) > 0 {
 				fmt.Fprintf(out, "Creators: %s\n", strings.Join(m.Creators, " / "))
 			}
 			if m.Description != "" {
 				fmt.Fprintf(out, "\n--- description ---\n%s\n", strings.TrimSpace(m.Description))
 			}
-			if strings.TrimSpace(m.License) == "" {
+			if text := strings.TrimSpace(model.LicenseTextFor(sp)); text == "" {
 				fmt.Fprintln(out, "\n--- license ---\n(no license text embedded in the manifest)")
 			} else {
-				fmt.Fprintf(out, "\n--- license (full text) ---\n%s\n", strings.TrimSpace(m.License))
+				fmt.Fprintf(out, "\n--- license (full text) ---\n%s\n", text)
 			}
 			return nil
 		}

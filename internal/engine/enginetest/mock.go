@@ -78,9 +78,13 @@ func New() *Mock {
 	return m
 }
 
-// FixtureAivmModels is the /aivm_models payload: the narrator model declares
-// an ACML license plus a credit line in its description; the heroine model
-// carries free-form terms without a markdown heading and no credit pattern.
+// FixtureAivmModels is the /aivm_models payload, mirroring the real engine's
+// shape: each model entry's speakers[] wraps the VOICEVOX-style descriptor
+// under "speaker" and carries the per-speaker license text as
+// speaker_info.policy. The narrator model declares an ACML license (via
+// policy) plus a credit line in its description; the heroine model has an
+// empty policy so consumers must fall back to the manifest's free-form
+// terms (no markdown heading, no credit pattern).
 var FixtureAivmModels = map[string]any{
 	"10000000-0000-0000-0000-00000000000a": map[string]any{
 		"is_private_model": false,
@@ -91,7 +95,12 @@ var FixtureAivmModels = map[string]any{
 			"creators":    []string{"Mock Studio <mock@example.com>"},
 			"license":     "# Aivis Common Model License (ACML) 1.0\n\nこのライセンスは、AI 音声合成モデルの利用条件と制限を定めるものです。\n",
 		},
-		"speakers": []map[string]any{FixtureSpeakers[0]},
+		"speakers": []map[string]any{{
+			"speaker": FixtureSpeakers[0],
+			"speaker_info": map[string]any{
+				"policy": "# Aivis Common Model License (ACML) 1.0\n\nこのライセンスは、AI 音声合成モデルの利用条件と制限を定めるものです。\n",
+			},
+		}},
 	},
 	"10000000-0000-0000-0000-00000000000b": map[string]any{
 		"is_private_model": false,
@@ -102,7 +111,10 @@ var FixtureAivmModels = map[string]any{
 			"creators":    []string{"Mock Studio <mock@example.com>"},
 			"license":     "\n利用規約は https://example.com/terms を遵守すること。\n再配布は禁止。\n",
 		},
-		"speakers": []map[string]any{FixtureSpeakers[1]},
+		"speakers": []map[string]any{{
+			"speaker":      FixtureSpeakers[1],
+			"speaker_info": map[string]any{"policy": ""},
+		}},
 	},
 }
 

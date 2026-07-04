@@ -105,16 +105,17 @@ func declaredLicenses(ctx context.Context, d *Deps) map[string]LicenseInfo {
 	}
 	out := make(map[string]LicenseInfo)
 	for _, model := range models {
-		name := model.Manifest.LicenseName()
-		if name == "" {
-			continue
-		}
 		for _, sp := range model.Speakers {
-			out[sp.SpeakerUUID] = LicenseInfo{
+			name := engine.LicenseNameFromText(model.LicenseTextFor(sp))
+			if name == "" {
+				continue
+			}
+			uuid := sp.Speaker.SpeakerUUID
+			out[uuid] = LicenseInfo{
 				Status: "declared",
 				Name:   name,
 				Credit: model.Manifest.CreditLine(),
-				Notes:  "declared in the model's AIVM manifest — review the full text (`voice-studio-mcp licenses --full " + sp.SpeakerUUID + "`) and record it in [[speaker_metadata]] before publishing",
+				Notes:  "declared in the model's AIVM manifest — review the full text (`voice-studio-mcp licenses --full " + uuid + "`) and record it in [[speaker_metadata]] before publishing",
 			}
 		}
 	}

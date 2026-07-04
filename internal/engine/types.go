@@ -44,11 +44,34 @@ type AudioQuery map[string]any
 // real response also embeds base64 icons and per-style assets that would
 // bloat memory for nothing.
 type AivmModel struct {
-	IsPrivateModel bool         `json:"is_private_model"`
-	Manifest       AivmManifest `json:"manifest"`
-	// Speakers is the engine-format speaker list of this model; its
-	// SpeakerUUID values join against GET /speakers.
-	Speakers []Speaker `json:"speakers"`
+	IsPrivateModel bool          `json:"is_private_model"`
+	Manifest       AivmManifest  `json:"manifest"`
+	Speakers       []AivmSpeaker `json:"speakers"`
+}
+
+// AivmSpeaker is one speaker entry of an AIVM model, in the engine's
+// VOICEVOX-style shape: the speaker descriptor (whose SpeakerUUID joins
+// against GET /speakers) plus speaker_info carrying the per-speaker policy
+// (license) text.
+type AivmSpeaker struct {
+	Speaker     Speaker         `json:"speaker"`
+	SpeakerInfo AivmSpeakerInfo `json:"speaker_info"`
+}
+
+// AivmSpeakerInfo is the subset of speaker_info we consume.
+type AivmSpeakerInfo struct {
+	// Policy is the per-speaker license text (usually identical to the
+	// model manifest's license).
+	Policy string `json:"policy"`
+}
+
+// LicenseTextFor returns the license text governing one speaker of the
+// model: the per-speaker policy when present, else the manifest license.
+func (m AivmModel) LicenseTextFor(sp AivmSpeaker) string {
+	if strings.TrimSpace(sp.SpeakerInfo.Policy) != "" {
+		return sp.SpeakerInfo.Policy
+	}
+	return m.Manifest.License
 }
 
 // AivmManifest is the subset of the AIVM manifest we consume. License is the
@@ -62,11 +85,17 @@ type AivmManifest struct {
 	License     string   `json:"license"`
 }
 
-// LicenseName returns a short human-readable name for the embedded license
-// text: the first markdown heading if present, otherwise the first non-empty
-// line, truncated to a summary length. Empty when no license text exists.
+// LicenseName returns a short human-readable name for the manifest's
+// license text. See LicenseNameFromText.
 func (m AivmManifest) LicenseName() string {
-	for _, line := range strings.Split(m.License, "\n") {
+	return LicenseNameFromText(m.License)
+}
+
+// LicenseNameFromText derives a short name from license text: the first
+// markdown heading if present, otherwise the first non-empty line,
+// truncated to a summary length. Empty when no text exists.
+func LicenseNameFromText(text string) string {
+	for _, line := range strings.Split(text, "\n") {
 		line = strings.TrimSpace(strings.TrimLeft(strings.TrimSpace(line), "#"))
 		if line == "" {
 			continue

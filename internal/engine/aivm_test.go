@@ -2,6 +2,7 @@ package engine_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -29,8 +30,16 @@ func TestAivmModels(t *testing.T) {
 		t.Errorf("manifest: %+v", narr.Manifest)
 	}
 	// The join key against /speakers survives parsing.
-	if len(narr.Speakers) != 1 || narr.Speakers[0].SpeakerUUID != "00000000-0000-0000-0000-0000000000aa" {
+	if len(narr.Speakers) != 1 || narr.Speakers[0].Speaker.SpeakerUUID != "00000000-0000-0000-0000-0000000000aa" {
 		t.Errorf("speakers: %+v", narr.Speakers)
+	}
+	// Per-speaker policy wins; empty policy falls back to the manifest text.
+	if got := narr.LicenseTextFor(narr.Speakers[0]); !strings.Contains(got, "ACML") {
+		t.Errorf("narrator license text: %q", got)
+	}
+	hero := models["10000000-0000-0000-0000-00000000000b"]
+	if got := hero.LicenseTextFor(hero.Speakers[0]); !strings.Contains(got, "example.com/terms") {
+		t.Errorf("heroine fallback license text: %q", got)
 	}
 }
 
