@@ -39,7 +39,9 @@ mode = "managed"
 	}
 
 	h := Start(t, binary, configPath)
-	if err := h.Initialize(); err != nil {
+	// serve answers initialize only after the engine is ready; a cold engine
+	// (first model load) can take minutes.
+	if err := h.InitializeWithTimeout(4 * time.Minute); err != nil {
 		t.Fatalf("initialize (engine startup can take minutes on first run): %v", err)
 	}
 

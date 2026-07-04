@@ -140,11 +140,18 @@ func (h *Harness) Call(method string, params any, timeout time.Duration) (json.R
 
 // Initialize performs the MCP handshake.
 func (h *Harness) Initialize() error {
+	return h.InitializeWithTimeout(10 * time.Second)
+}
+
+// InitializeWithTimeout performs the MCP handshake with a custom timeout.
+// The server answers initialize only after the engine is ready, so managed
+// mode with a cold engine (first model load) needs minutes, not seconds.
+func (h *Harness) InitializeWithTimeout(timeout time.Duration) error {
 	_, err := h.Call("initialize", map[string]any{
 		"protocolVersion": "2024-11-05",
 		"capabilities":    map[string]any{},
 		"clientInfo":      map[string]any{"name": "e2e", "version": "1"},
-	}, 10*time.Second)
+	}, timeout)
 	if err != nil {
 		return err
 	}
