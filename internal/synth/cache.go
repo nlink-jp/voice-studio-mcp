@@ -4,13 +4,15 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
-	"os"
-	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/nlink-jp/voice-studio-mcp/internal/workspace"
 )
+
+// cacheIndexRel is the cache index location inside a workspace.
+const cacheIndexRel = "cache/index.json"
 
 // CacheEntry records one synthesized line.
 type CacheEntry struct {
@@ -43,43 +45,41 @@ func formatFloat(f float64) string {
 	return strconv.FormatFloat(f, 'g', -1, 64)
 }
 
-// CacheStore is the on-disk synthesis cache index (cache/index.json).
-// Safe for concurrent use; every Put persists atomically (temp + rename) so
-// an interrupted batch loses at most the in-flight line.
+// CacheStore is the on-disk synthesis cache index of one workspace. All I/O
+// goes through the workspace's os.Root containment (ADR-0010). Safe for
+// concurrent use; every Put persists atomically so an interrupted batch
+// loses at most the in-flight line.
 type CacheStore struct {
-	path string
+	ws *workspace.Workspace
 
 	mu  sync.Mutex
 	idx map[string]CacheEntry // key: line id (decimal string)
 }
 
-// OpenCacheStore loads (or initializes) the index at path.
-func OpenCacheStore(path string) (*CacheStore, error) {
-	s := &CacheStore{path: path, idx: map[string]CacheEntry{}}
-	b, err := os.ReadFile(path)
-	if os.IsNotExist(err) {
+// OpenCacheStore loads (or initializes) the workspace's cache index.
+func OpenCacheStore(ws *workspace.Workspace) (*CacheStore, error) {
+	s := &CacheStore{ws: ws, idx: map[string]CacheEntry{}}
+	b, err := ws.ReadFile(cacheIndexRel)
+	if err != nil {
+		// Missing or unreadable index only costs re-synthesis; start fresh.
 		return s, nil
 	}
-	if err != nil {
-		return nil, fmt.Errorf("read cache index: %w", err)
-	}
 	if err := json.Unmarshal(b, &s.idx); err != nil {
-		// A corrupt index only costs re-synthesis; start fresh.
 		s.idx = map[string]CacheEntry{}
 	}
 	return s, nil
 }
 
 // Lookup reports a cache hit for lineID: the stored hash matches and the
-// WAV file still exists.
-func (s *CacheStore) Lookup(lineID int, hash, wavPath string) (CacheEntry, bool) {
+// WAV file still exists inside the workspace.
+func (s *CacheStore) Lookup(lineID int, hash string) (CacheEntry, bool) {
 	s.mu.Lock()
 	e, ok := s.idx[strconv.Itoa(lineID)]
 	s.mu.Unlock()
 	if !ok || e.Hash != hash {
 		return CacheEntry{}, false
 	}
-	if _, err := os.Stat(wavPath); err != nil {
+	if _, err := s.ws.Stat(WavRel(lineID)); err != nil {
 		return CacheEntry{}, false
 	}
 	return e, true
@@ -93,20 +93,9 @@ func (s *CacheStore) Put(lineID int, e CacheEntry) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.idx[strconv.Itoa(lineID)] = e
-	return s.persistLocked()
-}
-
-func (s *CacheStore) persistLocked() error {
 	b, err := json.MarshalIndent(s.idx, "", "  ")
 	if err != nil {
 		return err
 	}
-	tmp := s.path + ".tmp"
-	if err := os.MkdirAll(filepath.Dir(s.path), 0o755); err != nil {
-		return err
-	}
-	if err := os.WriteFile(tmp, b, 0o644); err != nil {
-		return err
-	}
-	return os.Rename(tmp, s.path)
+	return s.ws.WriteFileAtomic(cacheIndexRel, b)
 }

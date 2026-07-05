@@ -3,7 +3,6 @@ package master
 import (
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
@@ -53,14 +52,15 @@ func (m *Master) Build(ctx context.Context, ws *workspace.Workspace, scriptStem 
 			"ffmpeg not found at %q — install it (brew install ffmpeg) or set master.ffmpeg_path", m.Cfg.FFmpegPath)
 	}
 
-	// 1. Every line must have a WAV; collect formats and durations.
+	// 1. Every line must have a WAV; collect formats and durations. Reads go
+	// through the workspace's os.Root containment (ADR-0010).
 	var (
 		pieces  []piece
 		missing []int
 	)
 	for _, ln := range lines {
-		p := synth.WavPath(ws, ln.ID)
-		b, err := os.ReadFile(p)
+		rel := synth.WavRel(ln.ID)
+		b, err := ws.ReadFile(rel)
 		if err != nil {
 			missing = append(missing, ln.ID)
 			continue
@@ -74,7 +74,7 @@ func (m *Master) Build(ctx context.Context, ws *workspace.Workspace, scriptStem 
 		if ln.PauseAfterMS != nil {
 			pause = *ln.PauseAfterMS
 		}
-		pieces = append(pieces, piece{line: ln, wavPath: p, info: info, pauseMS: pause})
+		pieces = append(pieces, piece{line: ln, wavRel: rel, info: info, pauseMS: pause})
 	}
 	if len(missing) > 0 {
 		return Result{}, toolerr.Newf(toolerr.CodeMasterIncomplete,
@@ -94,44 +94,55 @@ func (m *Master) Build(ctx context.Context, ws *workspace.Workspace, scriptStem 
 	}
 
 	// 2. Prepare the tmp area (concat list, silences, chapters).
-	tmpDir := ws.Path(workspace.DirMaster, "tmp")
-	if err := os.RemoveAll(tmpDir); err != nil {
+	tmpRel := filepath.Join(workspace.DirMaster, "tmp")
+	if err := ws.RemoveAll(tmpRel); err != nil {
 		return Result{}, toolerr.Newf(toolerr.CodeWorkspaceFailed, "clean master tmp: %v", err)
 	}
-	if err := os.MkdirAll(tmpDir, 0o755); err != nil {
-		return Result{}, toolerr.Newf(toolerr.CodeWorkspaceFailed, "create master tmp: %v", err)
+	if err := ws.MkdirAll(tmpRel); err != nil {
+		return Result{}, err
 	}
 
-	// 3. One silence WAV per distinct pause duration.
-	silencePaths := map[int]string{}
+	// 3. One silence WAV per distinct pause duration (rendered by ffmpeg, so
+	// the output path is absolute; the parent tmp dir was just created by us).
+	silenceRels := map[int]string{}
 	for _, p := range pieces {
 		if p.pauseMS <= 0 {
 			continue
 		}
-		if _, ok := silencePaths[p.pauseMS]; ok {
+		if _, ok := silenceRels[p.pauseMS]; ok {
 			continue
 		}
-		out := filepath.Join(tmpDir, fmt.Sprintf("silence_%d.wav", p.pauseMS))
-		if err := m.runFFmpeg(ctx, silenceArgs(rate, p.pauseMS, out)); err != nil {
+		rel := filepath.Join(tmpRel, fmt.Sprintf("silence_%d.wav", p.pauseMS))
+		if err := m.runFFmpeg(ctx, silenceArgs(rate, p.pauseMS, ws.Path(rel))); err != nil {
 			return Result{}, err
 		}
-		silencePaths[p.pauseMS] = out
+		silenceRels[p.pauseMS] = rel
 	}
 
 	// 4. Concat list in script order: line WAV, then its trailing silence.
-	var concatPaths []string
+	// ffmpeg cannot inherit os.Root, so every input is re-verified as a real
+	// regular file immediately before the list is handed over (the remaining
+	// verify-to-spawn race is accepted per ADR-0010's threat model).
+	var concatRels []string
 	totalMS := 0
 	for _, p := range pieces {
-		concatPaths = append(concatPaths, p.wavPath)
+		concatRels = append(concatRels, p.wavRel)
 		totalMS += int(p.info.DurationSeconds * 1000)
 		if p.pauseMS > 0 {
-			concatPaths = append(concatPaths, silencePaths[p.pauseMS])
+			concatRels = append(concatRels, silenceRels[p.pauseMS])
 			totalMS += p.pauseMS
 		}
 	}
-	listPath := filepath.Join(tmpDir, "concat.txt")
-	if err := os.WriteFile(listPath, []byte(concatList(concatPaths)), 0o644); err != nil {
-		return Result{}, toolerr.Newf(toolerr.CodeWorkspaceFailed, "write concat list: %v", err)
+	concatPaths := make([]string, 0, len(concatRels))
+	for _, rel := range concatRels {
+		if err := ws.VerifyRegular(rel); err != nil {
+			return Result{}, err
+		}
+		concatPaths = append(concatPaths, ws.Path(rel))
+	}
+	listRel := filepath.Join(tmpRel, "concat.txt")
+	if err := ws.WriteFileAtomic(listRel, []byte(concatList(concatPaths))); err != nil {
+		return Result{}, err
 	}
 
 	// 5. Chapters from scene boundaries (m4b only).
@@ -140,10 +151,11 @@ func (m *Master) Build(ctx context.Context, ws *workspace.Workspace, scriptStem 
 	if opts.Format == "m4b" && opts.Chapters {
 		chs := sceneChapters(pieces)
 		chapters = len(chs)
-		metadataPath = filepath.Join(tmpDir, "ffmetadata.txt")
-		if err := os.WriteFile(metadataPath, []byte(ffmetadata(chs)), 0o644); err != nil {
-			return Result{}, toolerr.Newf(toolerr.CodeWorkspaceFailed, "write chapter metadata: %v", err)
+		metadataRel := filepath.Join(tmpRel, "ffmetadata.txt")
+		if err := ws.WriteFileAtomic(metadataRel, []byte(ffmetadata(chs))); err != nil {
+			return Result{}, err
 		}
+		metadataPath = ws.Path(metadataRel)
 	}
 
 	// 6. Final encode.
@@ -157,16 +169,17 @@ func (m *Master) Build(ctx context.Context, ws *workspace.Workspace, scriptStem 
 	if opts.Format == "m4b" {
 		bitrate = m.Cfg.M4BBitrate
 	}
-	if err := m.runFFmpeg(ctx, concatArgs(listPath, metadataPath, opts.Format, outPath, ln, bitrate)); err != nil {
+	if err := m.runFFmpeg(ctx, concatArgs(ws.Path(listRel), metadataPath, opts.Format, outPath, ln, bitrate)); err != nil {
 		return Result{}, err
 	}
 
 	// 7. Credits from the characters actually used.
 	credits, unverified := collectCredits(lines, casting)
-	creditsPath := ws.Path(workspace.DirMaster, name+".credits.txt")
-	if err := os.WriteFile(creditsPath, []byte(creditsText(credits, unverified)), 0o644); err != nil {
-		return Result{}, toolerr.Newf(toolerr.CodeWorkspaceFailed, "write credits: %v", err)
+	creditsRel := filepath.Join(workspace.DirMaster, name+".credits.txt")
+	if err := ws.WriteFileAtomic(creditsRel, []byte(creditsText(credits, unverified))); err != nil {
+		return Result{}, err
 	}
+	creditsPath := ws.Path(creditsRel)
 
 	return Result{
 		MasterPath:       outPath,
@@ -201,10 +214,10 @@ func (m *Master) runFFmpeg(ctx context.Context, args []string) error {
 	return nil
 }
 
-// piece is one script line with its rendered WAV.
+// piece is one script line with its rendered WAV (workspace-relative).
 type piece struct {
 	line    script.Line
-	wavPath string
+	wavRel  string
 	info    synth.WAVInfo
 	pauseMS int
 }

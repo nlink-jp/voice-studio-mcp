@@ -3,7 +3,7 @@ package tools
 import (
 	"context"
 	"encoding/json"
-	"os"
+	"path/filepath"
 
 	"github.com/nlink-jp/voice-studio-mcp/internal/engine"
 	"github.com/nlink-jp/voice-studio-mcp/internal/mcpserver"
@@ -77,8 +77,8 @@ func registerRegisterDictionary(srv *mcpserver.Server, d *Deps) {
 			return nil, err
 		}
 
-		recordPath := ws.Path(workspace.DirDict, "words.json")
-		record, err := loadDictRecord(recordPath)
+		recordRel := filepath.Join(workspace.DirDict, "words.json")
+		record, err := loadDictRecord(ws, recordRel)
 		if err != nil {
 			return nil, err
 		}
@@ -117,14 +117,14 @@ func registerRegisterDictionary(srv *mcpserver.Server, d *Deps) {
 			registered++
 		}
 
-		if err := saveDictRecord(recordPath, record); err != nil {
+		if err := saveDictRecord(ws, recordRel, record); err != nil {
 			return nil, err
 		}
 		out := map[string]any{
 			"workspace_id":    in.WorkspaceID,
 			"registered":      registered,
 			"skipped":         skipped,
-			"dictionary_path": recordPath,
+			"dictionary_path": ws.Path(recordRel),
 		}
 		if len(failed) > 0 {
 			out["failed"] = failed
@@ -147,33 +147,24 @@ func sameWord(prev dictRecord, w dictWordIn) bool {
 	}
 }
 
-func loadDictRecord(path string) (map[string]dictRecord, error) {
+func loadDictRecord(ws *workspace.Workspace, rel string) (map[string]dictRecord, error) {
 	record := map[string]dictRecord{}
-	b, err := os.ReadFile(path)
-	if os.IsNotExist(err) {
+	b, err := ws.ReadFile(rel)
+	if err != nil {
+		// Missing or unreadable record only costs duplicate registrations;
+		// start fresh (writes go through containment anyway).
 		return record, nil
 	}
-	if err != nil {
-		return nil, toolerr.Newf(toolerr.CodeWorkspaceFailed, "read dictionary record: %v", err)
-	}
 	if err := json.Unmarshal(b, &record); err != nil {
-		// A corrupt record only costs duplicate registrations; start fresh.
 		return map[string]dictRecord{}, nil
 	}
 	return record, nil
 }
 
-func saveDictRecord(path string, record map[string]dictRecord) error {
+func saveDictRecord(ws *workspace.Workspace, rel string, record map[string]dictRecord) error {
 	b, err := json.MarshalIndent(record, "", "  ")
 	if err != nil {
 		return toolerr.Newf(toolerr.CodeWorkspaceFailed, "encode dictionary record: %v", err)
 	}
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, b, 0o644); err != nil {
-		return toolerr.Newf(toolerr.CodeWorkspaceFailed, "write dictionary record: %v", err)
-	}
-	if err := os.Rename(tmp, path); err != nil {
-		return toolerr.Newf(toolerr.CodeWorkspaceFailed, "write dictionary record: %v", err)
-	}
-	return nil
+	return ws.WriteFileAtomic(rel, b)
 }

@@ -31,10 +31,12 @@ type Casting struct {
 	Characters map[string]CastEntry `toml:"characters"`
 }
 
-// LoadCasting reads a casting table. Unknown keys are an error.
-func LoadCasting(path string) (*Casting, error) {
+// ParseCasting decodes a casting table from raw TOML bytes (callers read
+// the file through workspace containment; path is used in messages only).
+// Unknown keys are an error.
+func ParseCasting(data []byte, path string) (*Casting, error) {
 	var c Casting
-	meta, err := toml.DecodeFile(path, &c)
+	meta, err := toml.Decode(string(data), &c)
 	if err != nil {
 		return nil, toolerr.Newf(toolerr.CodeCastingUnresolved,
 			"load casting table %s: %v", path, err)

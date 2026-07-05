@@ -1,8 +1,10 @@
 package tools
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/nlink-jp/voice-studio-mcp/internal/job"
 	"github.com/nlink-jp/voice-studio-mcp/internal/mcpserver"
@@ -49,7 +51,7 @@ func registerSynthesizeScript(srv *mcpserver.Server, d *Deps) {
 			return nil, err
 		}
 
-		store, err := synth.OpenCacheStore(synth.CacheIndexPath(ws))
+		store, err := synth.OpenCacheStore(ws)
 		if err != nil {
 			return nil, err
 		}
@@ -66,7 +68,7 @@ func registerSynthesizeScript(srv *mcpserver.Server, d *Deps) {
 			}
 			res := synth.Resolved{StyleID: id, SpeakerUUID: entry.SpeakerUUID}
 			if !in.Force {
-				if _, hit := store.Lookup(ln.ID, d.Synth.Key(ln, res), synth.WavPath(ws, ln.ID)); hit {
+				if _, hit := store.Lookup(ln.ID, d.Synth.Key(ln, res)); hit {
 					cached++
 				}
 			}
@@ -102,11 +104,15 @@ func loadValidatedScript(ws *workspace.Workspace, scriptPath, castingPath string
 	if err != nil {
 		return nil, nil, err
 	}
-	lines, lineErrs, err := script.ParseFile(sp)
+	raw, err := ws.ReadFile(sp)
 	if err != nil {
+		if errors.Is(err, toolerr.New(toolerr.CodePathNotAllowed, "")) {
+			return nil, nil, err
+		}
 		return nil, nil, toolerr.Newf(toolerr.CodeInvalidScript, "read script: %v", err).
 			WithDetails(map[string]any{"script_path": scriptPath})
 	}
+	lines, lineErrs := script.Parse(bytes.NewReader(raw))
 	if len(lineErrs) > 0 {
 		return nil, nil, script.InvalidScriptError(lineErrs)
 	}
@@ -114,14 +120,7 @@ func loadValidatedScript(ws *workspace.Workspace, scriptPath, castingPath string
 		return nil, nil, toolerr.New(toolerr.CodeInvalidScript, "script contains no lines")
 	}
 
-	if castingPath == "" {
-		castingPath = defaultCastingPath
-	}
-	cp, err := ws.ResolveInside(castingPath)
-	if err != nil {
-		return nil, nil, err
-	}
-	casting, err := script.LoadCasting(cp)
+	casting, err := loadCasting(ws, castingPath)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -129,4 +128,24 @@ func loadValidatedScript(ws *workspace.Workspace, scriptPath, castingPath string
 		return nil, nil, err
 	}
 	return lines, casting, nil
+}
+
+// loadCasting reads and parses the casting table through workspace containment.
+func loadCasting(ws *workspace.Workspace, castingPath string) (*script.Casting, error) {
+	if castingPath == "" {
+		castingPath = defaultCastingPath
+	}
+	cp, err := ws.ResolveInside(castingPath)
+	if err != nil {
+		return nil, err
+	}
+	raw, err := ws.ReadFile(cp)
+	if err != nil {
+		if errors.Is(err, toolerr.New(toolerr.CodePathNotAllowed, "")) {
+			return nil, err
+		}
+		return nil, toolerr.Newf(toolerr.CodeCastingUnresolved,
+			"read casting table %s: %v", castingPath, err)
+	}
+	return script.ParseCasting(raw, castingPath)
 }

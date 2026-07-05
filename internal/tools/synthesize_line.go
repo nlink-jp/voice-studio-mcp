@@ -69,7 +69,7 @@ func registerSynthesizeLine(srv *mcpserver.Server, d *Deps) {
 		if err != nil {
 			return nil, err
 		}
-		store, err := synth.OpenCacheStore(synth.CacheIndexPath(ws))
+		store, err := synth.OpenCacheStore(ws)
 		if err != nil {
 			return nil, err
 		}
@@ -85,14 +85,7 @@ func resolveLine(ws *workspace.Workspace, line script.Line, castingPath string, 
 		// cache correctly because style ids are unique across models.
 		return synth.Resolved{StyleID: *styleID}, nil
 	}
-	if castingPath == "" {
-		castingPath = defaultCastingPath
-	}
-	path, err := ws.ResolveInside(castingPath)
-	if err != nil {
-		return synth.Resolved{}, err
-	}
-	casting, err := script.LoadCasting(path)
+	casting, err := loadCasting(ws, castingPath)
 	if err != nil {
 		return synth.Resolved{}, err
 	}

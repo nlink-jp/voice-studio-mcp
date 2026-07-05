@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/nlink-jp/voice-studio-mcp/internal/toolerr"
@@ -97,17 +96,6 @@ func Parse(r io.Reader) ([]Line, []LineError) {
 		errs = append(errs, LineError{LineNo: lineNo + 1, Message: "read: " + err.Error()})
 	}
 	return lines, errs
-}
-
-// ParseFile reads a script JSONL file.
-func ParseFile(path string) ([]Line, []LineError, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer f.Close()
-	lines, errs := Parse(f)
-	return lines, errs, nil
 }
 
 // Validate checks one structurally-decoded line (used by synthesize_line,

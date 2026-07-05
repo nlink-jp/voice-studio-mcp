@@ -4,8 +4,6 @@ package synth
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 
@@ -40,14 +38,15 @@ type Resolved struct {
 	SpeakerUUID string
 }
 
-// WavPath returns the output path for a line inside ws.
-func WavPath(ws *workspace.Workspace, lineID int) string {
-	return ws.Path(workspace.DirWav, strconv.Itoa(lineID)+".wav")
+// WavRel returns the workspace-relative output path for a line.
+func WavRel(lineID int) string {
+	return filepath.Join(workspace.DirWav, strconv.Itoa(lineID)+".wav")
 }
 
-// CacheIndexPath returns the cache index path inside ws.
-func CacheIndexPath(ws *workspace.Workspace) string {
-	return ws.Path(workspace.DirCache, "index.json")
+// WavPath returns the absolute output path for a line inside ws (for
+// display and tool results; server I/O uses WavRel through the workspace).
+func WavPath(ws *workspace.Workspace, lineID int) string {
+	return ws.Path(WavRel(lineID))
 }
 
 // Key computes the cache key for a line under the synthesizer's settings.
@@ -61,14 +60,13 @@ func (s *Synthesizer) Key(line script.Line, res Resolved) string {
 // SynthesizeLine renders one line into ws (wav/<id>.wav), honoring the cache
 // unless force is set.
 func (s *Synthesizer) SynthesizeLine(ctx context.Context, ws *workspace.Workspace, store *CacheStore, line script.Line, res Resolved, force bool) (LineResult, error) {
-	wavPath := WavPath(ws, line.ID)
 	hash := s.Key(line, res)
 
 	if !force {
-		if e, hit := store.Lookup(line.ID, hash, wavPath); hit {
+		if e, hit := store.Lookup(line.ID, hash); hit {
 			return LineResult{
 				LineID:          line.ID,
-				WavPath:         wavPath,
+				WavPath:         WavPath(ws, line.ID),
 				DurationSeconds: e.DurationSeconds,
 				Cached:          true,
 				StyleID:         res.StyleID,
@@ -102,9 +100,8 @@ func (s *Synthesizer) SynthesizeLine(ctx context.Context, ws *workspace.Workspac
 			"engine returned an unreadable WAV for line %d: %v", line.ID, err)
 	}
 
-	if err := writeFileAtomic(wavPath, wav); err != nil {
-		return LineResult{}, toolerr.Newf(toolerr.CodeWorkspaceFailed,
-			"write %s: %v", wavPath, err)
+	if err := ws.WriteFileAtomic(WavRel(line.ID), wav); err != nil {
+		return LineResult{}, err
 	}
 	if err := store.Put(line.ID, CacheEntry{Hash: hash, DurationSeconds: info.DurationSeconds}); err != nil {
 		return LineResult{}, toolerr.Newf(toolerr.CodeWorkspaceFailed,
@@ -113,7 +110,7 @@ func (s *Synthesizer) SynthesizeLine(ctx context.Context, ws *workspace.Workspac
 
 	return LineResult{
 		LineID:          line.ID,
-		WavPath:         wavPath,
+		WavPath:         WavPath(ws, line.ID),
 		DurationSeconds: info.DurationSeconds,
 		Cached:          false,
 		StyleID:         res.StyleID,
@@ -134,15 +131,4 @@ func (s *Synthesizer) effective(line script.Line) (speed, intensity, volume floa
 		volume = *line.Volume
 	}
 	return speed, intensity, volume
-}
-
-func writeFileAtomic(path string, data []byte) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	tmp := fmt.Sprintf("%s.tmp", path)
-	if err := os.WriteFile(tmp, data, 0o644); err != nil {
-		return err
-	}
-	return os.Rename(tmp, path)
 }

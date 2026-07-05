@@ -2,8 +2,6 @@ package script_test
 
 import (
 	"errors"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/nlink-jp/voice-studio-mcp/internal/script"
@@ -28,17 +26,13 @@ style_id = 200
 "悲しみ" = 201
 `
 
-func writeCasting(t *testing.T, body string) string {
+func parseCasting(t *testing.T, body string) (*script.Casting, error) {
 	t.Helper()
-	path := filepath.Join(t.TempDir(), "casting.toml")
-	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	return path
+	return script.ParseCasting([]byte(body), "casting.toml")
 }
 
 func TestLoadCastingAndResolve(t *testing.T) {
-	c, err := script.LoadCasting(writeCasting(t, castingTOML))
+	c, err := parseCasting(t, castingTOML)
 	if err != nil {
 		t.Fatalf("load: %v", err)
 	}
@@ -68,29 +62,29 @@ func TestLoadCastingAndResolve(t *testing.T) {
 }
 
 func TestLoadCastingRejectsUnknownKeys(t *testing.T) {
-	_, err := script.LoadCasting(writeCasting(t, `
+	_, err := parseCasting(t, `
 [characters."a"]
 speaker_uuid = "u"
 style_id = 1
 volume = 2
-`))
+`)
 	if err == nil {
 		t.Fatalf("expected unknown-key error")
 	}
 }
 
 func TestLoadCastingRequiresSpeakerUUID(t *testing.T) {
-	_, err := script.LoadCasting(writeCasting(t, `
+	_, err := parseCasting(t, `
 [characters."a"]
 style_id = 1
-`))
+`)
 	if err == nil {
 		t.Fatalf("expected missing speaker_uuid error")
 	}
 }
 
 func TestValidateCollectsAllUnresolved(t *testing.T) {
-	c, err := script.LoadCasting(writeCasting(t, castingTOML))
+	c, err := parseCasting(t, castingTOML)
 	if err != nil {
 		t.Fatal(err)
 	}

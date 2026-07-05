@@ -25,7 +25,7 @@ func newSynth(t *testing.T) (*synth.Synthesizer, *enginetest.Mock, *workspace.Wo
 	if err != nil {
 		t.Fatal(err)
 	}
-	store, err := synth.OpenCacheStore(synth.CacheIndexPath(ws))
+	store, err := synth.OpenCacheStore(ws)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,8 +252,11 @@ func TestParseWAV(t *testing.T) {
 }
 
 func TestCacheStoreRoundTrip(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "cache", "index.json")
-	s1, err := synth.OpenCacheStore(path)
+	ws, err := workspace.NewManager(t.TempDir()).Ensure("cache-rt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s1, err := synth.OpenCacheStore(ws)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,37 +265,39 @@ func TestCacheStoreRoundTrip(t *testing.T) {
 	}
 
 	// A fresh store sees the persisted entry (wav existence is checked by
-	// Lookup, so create the file).
-	wav := filepath.Join(t.TempDir(), "1.wav")
-	if err := os.WriteFile(wav, []byte("x"), 0o644); err != nil {
+	// Lookup, so create wav/1.wav inside the workspace).
+	if err := ws.WriteFileAtomic(synth.WavRel(1), []byte("x")); err != nil {
 		t.Fatal(err)
 	}
-	s2, err := synth.OpenCacheStore(path)
+	s2, err := synth.OpenCacheStore(ws)
 	if err != nil {
 		t.Fatal(err)
 	}
-	e, hit := s2.Lookup(1, "h1", wav)
+	e, hit := s2.Lookup(1, "h1")
 	if !hit || e.DurationSeconds != 1.5 {
 		t.Errorf("lookup: %+v hit=%v", e, hit)
 	}
-	if _, hit := s2.Lookup(1, "other-hash", wav); hit {
+	if _, hit := s2.Lookup(1, "other-hash"); hit {
 		t.Errorf("hash mismatch must miss")
 	}
-	if _, hit := s2.Lookup(2, "h1", wav); hit {
-		t.Errorf("unknown line must miss")
+	if _, hit := s2.Lookup(2, "h1"); hit {
+		t.Errorf("unknown line must miss (no wav/2.wav)")
 	}
 }
 
 func TestCacheStoreCorruptIndexStartsFresh(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "index.json")
-	if err := os.WriteFile(path, []byte("{corrupt"), 0o644); err != nil {
+	ws, err := workspace.NewManager(t.TempDir()).Ensure("cache-corrupt")
+	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := synth.OpenCacheStore(path)
+	if err := ws.WriteFileAtomic("cache/index.json", []byte("{corrupt")); err != nil {
+		t.Fatal(err)
+	}
+	s, err := synth.OpenCacheStore(ws)
 	if err != nil {
 		t.Fatalf("corrupt index should not fail open: %v", err)
 	}
-	if _, hit := s.Lookup(1, "h", "/nope"); hit {
+	if _, hit := s.Lookup(1, "h"); hit {
 		t.Errorf("fresh store must miss")
 	}
 }
