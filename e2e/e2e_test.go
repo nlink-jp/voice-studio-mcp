@@ -125,7 +125,9 @@ func TestE2E_FullProductionFlow(t *testing.T) {
 	if err != nil || isErr {
 		t.Fatalf("list_speakers: err=%v isErr=%v body=%s", err, isErr, body)
 	}
-	if !strings.Contains(string(body), `"status":"verified"`) || !strings.Contains(string(body), `"status":"unverified"`) {
+	// Narrator has a [[speaker_metadata]] entry (verified); the heroine only
+	// has manifest-declared terms (ADR-0008).
+	if !strings.Contains(string(body), `"status":"verified"`) || !strings.Contains(string(body), `"status":"declared"`) {
 		t.Errorf("license statuses missing: %s", body)
 	}
 
