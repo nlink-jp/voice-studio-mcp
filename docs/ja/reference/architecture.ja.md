@@ -32,7 +32,7 @@ MCP stdio サーバー。**判断・創作はエージェント側、決定的�
 | stdio | MCP クライアントとの JSON-RPC。**stdout は転送路専用**、ログは stderr / ファイルのみ |
 | localhost HTTP | AivisSpeech Engine(managed 時は本サーバーの子プロセス)。ネットワーク外部への通信は一切ない |
 | 子プロセス | エンジン(ADR-0002)と ffmpeg(Runner interface 経由)。終了コード・stderr 末尾は構造化エラーで表面化 |
-| ファイルシステム | workspace ルート配下のみ書き込む。エージェント指定の相対パスは `ResolveInside` で封じ込め(絶対パス・`..` 拒否) |
+| ファイルシステム | workspace 配下のみ読み書きする。ルートは既定(~/.voice-studio)またはエージェントが用意した `workspace_root`(ADR-0010)。エージェント書き込み可能領域で仕事をするため、全 I/O を os.Root でカーネル強制封じ込め(ルート外への symlink は失敗)。`ResolveInside` は字句事前検査 |
 
 シークレットは存在しない(クラウド API・認証なし)。脅威モデルの中心は
 「エージェントの誤った引数によるワークスペース外への書き込み/削除」であり、
@@ -145,6 +145,7 @@ enqueue 前バリデーションを同期で完走させるのが要点: エー�
 | [0007](../adr/0007-license-metadata-as-data.ja.md) | モデル規約はデータとして人手記録、ツールが運ぶ |
 | [0008](../adr/0008-license-collection-from-manifests.ja.md) | 規約の収集は AIVM マニフェストから自動化(declared)、確認は人間(verified) |
 | [0009](../adr/0009-bundle-skill-with-mcp.ja.md) | radio-drama スキルは本リポジトリに同梱(契約の同一コミット進化+整合テスト) |
+| [0010](../adr/0010-agent-prepared-workspaces.ja.md) | エージェントが用意した workspace_root で仕事をする+os.Root カーネル封じ込め+get_usage |
 
 ## 8. スコープ外(v1 で意図的にやらないこと)
 

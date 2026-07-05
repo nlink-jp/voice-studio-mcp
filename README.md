@@ -40,6 +40,7 @@ agent-authored script into mastered audio. No cloud APIs, no credentials.
 - macOS on Apple Silicon (v1 target)
 - [AivisSpeech](https://aivis-project.com/) installed (bundles the engine)
 - `ffmpeg` in PATH (only for the `master` tool): `brew install ffmpeg`
+- Go 1.25+ (only when building from source)
 
 ## Quick start
 
@@ -78,6 +79,7 @@ sensible defaults.
 
 | Tool | Description |
 |------|-------------|
+| `get_usage` | This server's operating manual (workspace model, schema, recovery table) — call it first from clients without the bundled skill |
 | `list_speakers` | Installed voice models + styles + license metadata |
 | `register_dictionary` | Register work-specific pronunciations (katakana readings, accent) |
 | `synthesize_script` | Batch-synthesize a script JSONL → `wav/<id>.wav` (async; returns `job_id`) |
@@ -149,6 +151,13 @@ style_id = 933744512
 
 ## Workspace layout
 
+Every workspace tool accepts an optional `workspace_root` — the absolute
+path of a directory the agent prepared in its own writable area (e.g.
+inside the project directory). This is how sandboxed MCP clients whose
+writes are restricted to the project tree use the server; the server never
+follows symlinks out of a workspace (kernel-enforced via os.Root,
+ADR-0010). Omitted, the default root applies:
+
 ```
 ~/.voice-studio/<workspace_id>/
 ├── script/          script JSONL files (agent-authored)
@@ -195,7 +204,7 @@ dotfiles.
 - [`docs/en/reference/agent-workflow.md`](docs/en/reference/agent-workflow.md) — the agent workflow guide (hand this to Claude Code / Cowork; sample material in [`samples/`](samples/))
 - [`docs/en/reference/setup.md`](docs/en/reference/setup.md) — setup guide (install → first production → troubleshooting)
 - [`docs/en/reference/architecture.md`](docs/en/reference/architecture.md) — architecture overview and decision index
-- [`docs/en/adr/`](docs/en/adr/) — nine ADRs recording the *why* behind non-obvious designs
+- [`docs/en/adr/`](docs/en/adr/) — ten ADRs recording the *why* behind non-obvious designs
 - [`docs/en/voice-studio-mcp-rfp.md`](docs/en/voice-studio-mcp-rfp.md) — the original RFP
 - 日本語版: [`docs/ja/`](docs/ja/) (セットアップ / アーキテクチャ / ADR / RFP)
 

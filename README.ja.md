@@ -37,6 +37,7 @@ MCPサーバーで、エージェントが書いた台本を完成音声に変�
 - macOS(Apple Silicon、v1対象)
 - [AivisSpeech](https://aivis-project.com/) インストール済み(エンジン同梱)
 - `ffmpeg`(`master` ツールのみ使用): `brew install ffmpeg`
+- Go 1.25+(ソースからビルドする場合のみ)
 
 ## クイックスタート
 
@@ -75,6 +76,7 @@ MCPクライアント(例: Claude Code)への登録:
 
 | ツール | 説明 |
 |--------|------|
+| `get_usage` | 本サーバーの操作マニュアル(ワークスペースモデル・スキーマ・復旧表)。同梱スキルのないクライアントは最初に呼ぶ |
 | `list_speakers` | 導入済み音声モデル+スタイル+規約メタデータ |
 | `register_dictionary` | 作品固有の読み(カタカナ・アクセント)を登録 |
 | `synthesize_script` | 台本JSONLを一括合成 → `wav/<id>.wav`(非同期、`job_id` 返却) |
@@ -146,6 +148,13 @@ style_id = 933744512
 
 ## ワークスペース構成
 
+全ワークスペース系ツールはオプショナルな `workspace_root`(エージェントが
+自分の書き込み可能領域 — 例: プロジェクトディレクトリ内 — に用意した
+ディレクトリの絶対パス)を受け付けます。書き込みがプロジェクトツリーに
+制限されたサンドボックス型 MCP クライアントはこれを使います。サーバーは
+ワークスペース外への symlink を決して辿りません(os.Root によるカーネル
+強制、ADR-0010)。省略時は既定ルート:
+
 ```
 ~/.voice-studio/<workspace_id>/
 ├── script/          台本JSONL(エージェントが作成)
@@ -191,7 +200,7 @@ VOICE_STUDIO_TEST_REAL_ENGINE=1 make test-e2e   # opt-in: 実エンジン
 - [`docs/ja/reference/agent-workflow.ja.md`](docs/ja/reference/agent-workflow.ja.md) — エージェント向けワークフロー手順書(Claude Code / Cowork にそのまま渡す。サンプル素材は [`samples/`](samples/))
 - [`docs/ja/reference/setup.ja.md`](docs/ja/reference/setup.ja.md) — セットアップガイド(導入→最初の制作→トラブルシューティング)
 - [`docs/ja/reference/architecture.ja.md`](docs/ja/reference/architecture.ja.md) — アーキテクチャ概観と設計判断の索引
-- [`docs/ja/adr/`](docs/ja/adr/) — 非自明な設計の「なぜ」を記録した ADR 9本
+- [`docs/ja/adr/`](docs/ja/adr/) — 非自明な設計の「なぜ」を記録した ADR 10本
 - [`docs/ja/voice-studio-mcp-rfp.ja.md`](docs/ja/voice-studio-mcp-rfp.ja.md) — RFP
 - English: [`docs/en/`](docs/en/)(setup / architecture / ADR / RFP)
 

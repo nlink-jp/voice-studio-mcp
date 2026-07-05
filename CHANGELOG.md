@@ -4,6 +4,31 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Agent-prepared workspaces (ADR-0010, settled in issue #1): every
+  workspace tool accepts an optional `workspace_root` — the absolute
+  path of a directory the agent created in its own writable area —
+  so sandboxed MCP clients whose writes are restricted to the project
+  tree can use the server. Stateless per-call parameter; the default
+  root and existing calls are unchanged.
+- `get_usage` tool returning the embedded operating manual (workspace
+  model, production flow, script schema, recovery table), advertised
+  via the MCP `instructions` field on initialize; pinned to the real
+  tools/errors/schema by coherence tests.
+
+### Changed
+
+- All server I/O inside workspaces is kernel-contained via `os.Root`:
+  symlinks leaving a workspace fail with `path_not_allowed` (the
+  confused-deputy defense required once workspaces became
+  agent-writable). ffmpeg inputs are re-verified as regular files
+  immediately before spawn.
+- Go toolchain floor raised from 1.23 to 1.25 (os.Root convenience
+  APIs).
+
 ## [0.2.0] - 2026-07-04
 
 ### Added

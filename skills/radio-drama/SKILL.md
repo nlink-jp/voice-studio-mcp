@@ -11,8 +11,13 @@ You are producing radio-drama / audiobook audio from a manuscript, using the
 `synthesize_script`, `synthesize_line`, `check_job`, `master`.
 
 Input: **$ARGUMENTS** (manuscript path and optional workspace_id; ask the
-user if missing). The workspace root is `~/.voice-studio/<workspace_id>/`
-unless the server is configured otherwise — create workspace files there.
+user if missing). The workspace root defaults to
+`~/.voice-studio/<workspace_id>/` — create workspace files there.
+**If your file writes are sandboxed** (restricted to the project tree),
+create a workspace directory inside the project instead (e.g.
+`<project>/.voice-studio/`), write your files there, and pass its absolute
+path as `workspace_root` on **every** workspace tool call (ADR-0010). The
+server rejects symlinks that leave the workspace (`path_not_allowed`).
 
 This skill ships with voice-studio-mcp and matches its script JSONL schema;
 if a tool rejects your script, trust the tool's error details over memory.
@@ -134,6 +139,13 @@ accompany the release), and any license warnings.
 | `master_incomplete` | synthesize details.missing_line_ids first |
 | `ffmpeg_not_found` | user: `brew install ffmpeg` |
 | `path_not_allowed` | use workspace-relative paths |
+
+## Tips
+
+- Clients without this skill can call `get_usage` for the server's
+  operating manual; you already have its content here.
+- When using `workspace_root`, keep passing the same absolute path on
+  every call — it is a per-call parameter, not server state.
 
 ## Never do
 

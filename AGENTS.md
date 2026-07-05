@@ -99,6 +99,11 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
   `make install-skill`); `skills/skills_test.go` pins skill/server
   coherence — update the skill when tools, error codes, or the schema
   change, or the build breaks
+- **ADR-0010**: "the server works in the workplace the agent prepared" —
+  optional stateless `workspace_root` param on all workspace tools;
+  ALL workspace I/O goes through os.Root (Go 1.25 floor); ffmpeg inputs
+  re-verified via Lstat pre-spawn; `get_usage` + initialize instructions
+  for skill-less clients (`internal/tools/usage.md`, coherence-tested)
 
 Full texts: [`docs/en/adr/`](docs/en/adr/) / [`docs/ja/adr/`](docs/ja/adr/).
 

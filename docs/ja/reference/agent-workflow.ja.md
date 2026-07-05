@@ -19,7 +19,11 @@ MCP サーバー `voice-studio` を登録済みの Claude Code / Cowork に、
 
 ### Step 1 — 環境確認
 
-`list_speakers` を呼ぶ。エラー(`engine_unavailable`)ならユーザーに
+`list_speakers` を呼ぶ。**自分のファイル書き込みがサンドボックス化されて
+いる場合**(プロジェクトツリーのみ書き込み可など)は、プロジェクト内に
+ワークスペース用ディレクトリを作り、その絶対パスを以後の全ワークスペース
+系ツールに `workspace_root` として渡す(ADR-0010。コール単位パラメータで
+あり、サーバー状態にはならない)。エラー(`engine_unavailable`)ならユーザーに
 AivisSpeech の導入状況を確認(セットアップは
 [setup.ja.md](setup.ja.md) 参照)。話者一覧と各 `license.status` を控える。
 
