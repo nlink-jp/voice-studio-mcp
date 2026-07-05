@@ -89,18 +89,30 @@ MCPクライアント(例: Claude Code)への登録:
 
 ## Claude Code スキル(同梱)
 
-リポジトリに **radio-drama** スキルを同梱しています — エージェント
-ワークフロー(原稿→キャスティング→辞書→合成→リテイク→マスタリング、
-人間チェックポイント必須)の運用形です:
+リポジトリに **multi-actor-narration** スキルを同梱しています — エージェント
+ワークフロー(入力→キャスティング→辞書→合成→リテイク→マスタリング、
+人間チェックポイント必須)の運用形です。1つのスキルが、同じ voice-studio
+パイプライン上で5フォーマットに振り分けます:
+
+- **talk-podcast / panel-discussion / news-briefing / lesson-narration** —
+  資料・テーマ → 複数話者の解説音声
+- **audio-drama** — 小説・脚本 → 朗読劇 / オーディオブック
+  (旧 radio-drama スキルを汎用化した後継)
 
 ```sh
-make install-skill      # → ~/.claude/skills/radio-drama
+make install-skill      # → ~/.claude/skills/multi-actor-narration
+make package-skill      # → dist/multi-actor-narration.skill(可搬パッケージ)
 ```
 
-導入後、Claude Code / Cowork に *「/radio-drama samples/manuscript.ja.md」*
-のように依頼できます。スキルを別リポジトリでなくここに同梱するのは、
-本サーバーのスキーマ・ツールと常に一致させるためです —
-`skills/skills_test.go` が整合を機械検査します(ADR-0009)。
+導入後、Claude Code / Cowork に
+*「/multi-actor-narration samples/manuscript.ja.md」*(audio-drama に振り分け)
+のように依頼できます。PDF やテーマを渡せば解説フォーマットになります。
+スキル source を別リポジトリでなくここに同梱するのは、本サーバーの
+スキーマ・ツールと常に一致させるためです — `skills/skills_test.go` が
+マルチファイル構成のスキル全体で整合を機械検査します(ADR-0009)。
+リリースでは `multi-actor-narration.skill` を MCP バイナリの隣に**別アセット**
+として添付するので、リポジトリを持たない利用者もスキルだけ導入できます
+(ADR-0011)。
 
 ### 台本JSONL(canonicalスキーマ)
 

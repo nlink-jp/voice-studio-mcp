@@ -4,6 +4,38 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `.skill` packaging (ADR-0011): `skills/build.sh` + `make package-skill`
+  produce `dist/multi-actor-narration.skill` — a zip whose top-level entry
+  is the skill directory. Attached to releases as a **separate asset** next
+  to the MCP binary, so users without the repo can import the skill directly.
+
+### Changed
+
+- **Bundled skill consolidated into `multi-actor-narration`** (ADR-0011),
+  adopted from the `magifd2/claude-skills` experiment. One router skill now
+  covers five formats over the same voice-studio pipeline: talk-podcast,
+  panel-discussion, news-briefing, lesson-narration (document/theme →
+  multi-speaker explainer audio) and **audio-drama** — the generalized
+  successor of radio-drama (novel/script → narrated audio drama / audiobook,
+  with the novel-works-specific coupling removed).
+  - **BREAKING**: the skill command name changed —
+    `/radio-drama` → `/multi-actor-narration`. Its description carries the
+    朗読 / ラジオドラマ / オーディオブック / novel / manuscript triggers so
+    equivalent requests still route to it.
+- `skills/skills_test.go` now aggregates the whole multi-file skill (SKILL.md
+  router + `_shared/*.md` + `<format>/FORMAT.md`) for the tool/error/schema
+  coherence checks, and asserts exactly one frontmatter `SKILL.md` (the
+  packaging invariant a nested manifest would violate).
+
+### Removed
+
+- The standalone `radio-drama` skill; its capability lives on as the
+  `audio-drama` format of `multi-actor-narration`.
+
 ## [0.3.0] - 2026-07-05
 
 ### Added

@@ -2,6 +2,7 @@
 
 - **Status**: Accepted (2026-07-04)
 - **Supersedes**: RFP の「スキルは skills-series の別プロジェクト」というスコープ判断
+- **Amended by**: ADR-0011（同梱スキルを `multi-actor-narration` に一本化し、別 `.skill` リリースアセットとしても配布する。下記の in-repo 整合の原則は強化される）
 
 ## Context
 

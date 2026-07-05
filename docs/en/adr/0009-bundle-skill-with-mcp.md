@@ -2,6 +2,7 @@
 
 - **Status**: Accepted (2026-07-04)
 - **Supersedes**: the RFP's scope decision "the skill is a separate skills-series project"
+- **Amended by**: ADR-0011 (the bundled skill is consolidated into `multi-actor-narration` and is now also shipped as a separate `.skill` release asset; the in-repo coherence principle below is reinforced)
 
 ## Context
 

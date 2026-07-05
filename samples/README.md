@@ -4,6 +4,9 @@ End-to-end sample material for the agent workflow described in
 [`docs/en/reference/agent-workflow.md`](../docs/en/reference/agent-workflow.md)
 ([日本語](../docs/ja/reference/agent-workflow.ja.md)).
 
+The manuscript is fiction, so it exercises the **audio-drama** format of the
+bundled `multi-actor-narration` skill (`skills/multi-actor-narration/`).
+
 | File | Role |
 |------|------|
 | `manuscript.ja.md` | Sample manuscript (the workflow's input; CC0) |

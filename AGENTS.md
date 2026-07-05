@@ -22,6 +22,7 @@ make test-e2e   # build + drive the binary over stdio against an
                 # in-process mock engine + ffmpeg stub
 VOICE_STUDIO_TEST_REAL_ENGINE=1 make test-e2e  # opt-in real-engine e2e
 make package    # build-all + zip + notarize darwin (NOTARY_PROFILE)
+make package-skill  # bundle skills/ → dist/multi-actor-narration.skill (release asset)
 ```
 
 Never `go build` directly — always `make build` (outputs to `dist/`).
@@ -95,15 +96,22 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
 - **ADR-0008**: license collection automated from AIVM manifests
   (`/aivm_models` → status "declared"); verification stays human
   ("verified" via `[[speaker_metadata]]`; `licenses` subcommand)
-- **ADR-0009**: radio-drama skill bundled in `skills/` (installed via
-  `make install-skill`); `skills/skills_test.go` pins skill/server
-  coherence — update the skill when tools, error codes, or the schema
-  change, or the build breaks
+- **ADR-0009**: the Claude Code skill is bundled in `skills/` (installed via
+  `make install-skill`), not a separate repo; `skills/skills_test.go` pins
+  skill/server coherence — update the skill when tools, error codes, or the
+  schema change, or the build breaks
 - **ADR-0010**: "the server works in the workplace the agent prepared" —
   optional stateless `workspace_root` param on all workspace tools;
   ALL workspace I/O goes through os.Root (Go 1.25 floor); ffmpeg inputs
   re-verified via Lstat pre-spawn; `get_usage` + initialize instructions
   for skill-less clients (`internal/tools/usage.md`, coherence-tested)
+- **ADR-0011**: the bundled skill is the single **multi-actor-narration**
+  skill — five formats over one pipeline (talk-podcast / panel-discussion /
+  news-briefing / lesson-narration + generalized **audio-drama**, the former
+  radio-drama). Built by `skills/build.sh` + `make package-skill` →
+  `dist/multi-actor-narration.skill`, shipped as a separate release asset;
+  the coherence test aggregates the multi-file skill (SKILL.md + `_shared/`
+  + `<format>/FORMAT.md`). Breaking: `/radio-drama` → `/multi-actor-narration`
 
 Full texts: [`docs/en/adr/`](docs/en/adr/) / [`docs/ja/adr/`](docs/ja/adr/).
 
@@ -112,7 +120,8 @@ Full texts: [`docs/en/adr/`](docs/en/adr/) / [`docs/ja/adr/`](docs/ja/adr/).
 - [`docs/en/reference/agent-workflow.md`](docs/en/reference/agent-workflow.md) /
   [`docs/ja/reference/agent-workflow.ja.md`](docs/ja/reference/agent-workflow.ja.md)
   — the 10-step production procedure agents follow (precursor of the
-  radio-drama skill); sample material in `samples/`.
+  multi-actor-narration skill's audio-drama format); sample material in
+  `samples/`.
 - [`docs/en/reference/architecture.md`](docs/en/reference/architecture.md) /
   [`docs/ja/reference/architecture.ja.md`](docs/ja/reference/architecture.ja.md)
   — module map, data flow, error model, testing strategy.

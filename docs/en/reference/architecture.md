@@ -90,7 +90,7 @@ verify every line has a WAV (missing → master_incomplete)
 ### 3.3 Contracts (the agent boundary)
 
 - The **script JSONL schema** (`internal/script.Line`) is canonical; the
-  future radio-drama skill (separate project) references it.
+  bundled multi-actor-narration skill references it.
 - Large inputs (scripts) are passed **by file path**, never inline. Outputs
   return **paths + summaries only** — audio bytes never cross the MCP
   boundary. Both are deliberate token economics.
@@ -149,6 +149,7 @@ test seam.
 | [0008](../adr/0008-license-collection-from-manifests.md) | License collection automated from AIVM manifests (declared); verification stays human (verified) |
 | [0009](../adr/0009-bundle-skill-with-mcp.md) | radio-drama skill bundled in this repo (contracts evolve in one commit + coherence test) |
 | [0010](../adr/0010-agent-prepared-workspaces.md) | Work in the agent-prepared workspace_root + os.Root kernel containment + get_usage |
+| [0011](../adr/0011-consolidate-skill-into-multi-actor-narration.md) | Skill consolidated into multi-actor-narration (5 formats incl. generalized audio-drama); shipped as a separate .skill release asset |
 
 ## 8. Out of scope (deliberately, in v1)
 

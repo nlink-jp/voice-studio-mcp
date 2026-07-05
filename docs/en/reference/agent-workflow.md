@@ -3,7 +3,8 @@
 The standard procedure an agent follows to turn a novel/story manuscript
 into radio-drama or audiobook audio. **This document is written to be read
 by the agent directly** — the user only pastes the request template in §1.
-The future radio-drama skill will treat this guide as its canonical source.
+The bundled multi-actor-narration skill (audio-drama format) treats this
+guide as its canonical source.
 
 ## 1. For users: request template
 

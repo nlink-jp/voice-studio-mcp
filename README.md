@@ -92,18 +92,29 @@ audio bytes are never returned to the client.
 
 ## Claude Code skill (bundled)
 
-The repository bundles the **radio-drama** skill — the operational form of
-the agent workflow (manuscript → casting → dictionary → synthesis → retakes
-→ mastering, with mandatory human checkpoints):
+The repository bundles the **multi-actor-narration** skill — the operational
+form of the agent workflow (input → casting → dictionary → synthesis →
+retakes → mastering, with mandatory human checkpoints). One skill routes to
+five formats over the same voice-studio pipeline:
+
+- **talk-podcast / panel-discussion / news-briefing / lesson-narration** —
+  document or theme → multi-speaker explainer audio
+- **audio-drama** — novel / script → narrated audio drama / audiobook
+  (the generalized successor of the former radio-drama skill)
 
 ```sh
-make install-skill      # → ~/.claude/skills/radio-drama
+make install-skill      # → ~/.claude/skills/multi-actor-narration
+make package-skill      # → dist/multi-actor-narration.skill (portable package)
 ```
 
-Then ask Claude Code / Cowork: *"/radio-drama samples/manuscript.ja.md"*.
-The skill ships here (not in a separate repo) so it always matches this
-server's schema and tools — `skills/skills_test.go` enforces that
-(ADR-0009).
+Then ask Claude Code / Cowork:
+*"/multi-actor-narration samples/manuscript.ja.md"* (routes to audio-drama),
+or point it at a PDF/theme for an explainer format. The skill source ships
+here (not in a separate repo) so it always matches this server's schema and
+tools — `skills/skills_test.go` enforces that across the multi-file skill
+(ADR-0009). Releases attach `multi-actor-narration.skill` as a **separate
+asset** next to the MCP binary, so users without the repo can import the
+skill directly (ADR-0011).
 
 ### Script JSONL (canonical schema)
 

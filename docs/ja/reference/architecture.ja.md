@@ -86,8 +86,8 @@ enqueue 前バリデーションを同期で完走させるのが要点: エー�
 
 ### 3.3 コントラクト(エージェントとの境界)
 
-- **台本 JSONL スキーマ**(`internal/script.Line`)が canonical。後続の
-  radio-drama スキル(別プロジェクト)はこれを参照する。
+- **台本 JSONL スキーマ**(`internal/script.Line`)が canonical。同梱の
+  multi-actor-narration スキルはこれを参照する。
 - 大きな入力(台本)は**ファイルパスで渡す**(ツール引数に本文を載せない)。
   出力も**パス+サマリのみ**返し、音声バイトは決して返さない。トークン
   経済のための一貫した設計。
@@ -146,6 +146,7 @@ enqueue 前バリデーションを同期で完走させるのが要点: エー�
 | [0008](../adr/0008-license-collection-from-manifests.ja.md) | 規約の収集は AIVM マニフェストから自動化(declared)、確認は人間(verified) |
 | [0009](../adr/0009-bundle-skill-with-mcp.ja.md) | radio-drama スキルは本リポジトリに同梱(契約の同一コミット進化+整合テスト) |
 | [0010](../adr/0010-agent-prepared-workspaces.ja.md) | エージェントが用意した workspace_root で仕事をする+os.Root カーネル封じ込め+get_usage |
+| [0011](../adr/0011-consolidate-skill-into-multi-actor-narration.ja.md) | スキルを multi-actor-narration に一本化(汎用化 audio-drama 含む5フォーマット)、別 .skill リリースアセットで配布 |
 
 ## 8. スコープ外(v1 で意図的にやらないこと)
 

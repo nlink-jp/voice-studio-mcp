@@ -38,7 +38,7 @@ make package    # build-all + zip + notarize darwin
 - Jobs are in-memory only; `job_not_found` guides recovery
 - Managed engine mode attaches before spawning
 - Script JSONL schema in `internal/script` is the canonical contract for
-  the future radio-drama skill
+  the bundled multi-actor-narration skill
 
 ## Design references
 
