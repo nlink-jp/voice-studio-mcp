@@ -105,12 +105,124 @@ func TestResolveInside(t *testing.T) {
 		}
 	}
 
-	// Resolved paths stay under the base dir.
-	p, err := w.ResolveInside("script/ep1.jsonl")
+	// ResolveInside returns cleaned workspace-relative paths.
+	p, err := w.ResolveInside("a/b/../c")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p != filepath.Join(w.BaseDir, "script", "ep1.jsonl") {
-		t.Errorf("resolved path: %s", p)
+	if p != filepath.Join("a", "c") {
+		t.Errorf("resolved rel path: %s", p)
+	}
+}
+
+func TestEnsureInValidation(t *testing.T) {
+	m := NewManager(t.TempDir())
+	sentinel := toolerr.New(toolerr.CodePathNotAllowed, "")
+
+	if _, err := m.EnsureIn("relative/path", "ws"); !errors.Is(err, sentinel) {
+		t.Errorf("relative workspace_root should be rejected: %v", err)
+	}
+	if _, err := m.EnsureIn(filepath.Join(t.TempDir(), "missing"), "ws"); !errors.Is(err, sentinel) {
+		t.Errorf("missing workspace_root should be rejected: %v", err)
+	}
+	file := filepath.Join(t.TempDir(), "a-file")
+	if err := os.WriteFile(file, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.EnsureIn(file, "ws"); !errors.Is(err, sentinel) {
+		t.Errorf("non-directory workspace_root should be rejected: %v", err)
+	}
+
+	// Happy path: an agent-prepared directory works and gets the layout.
+	prepared := t.TempDir()
+	w, err := m.EnsureIn(prepared, "ep1")
+	if err != nil {
+		t.Fatalf("EnsureIn: %v", err)
+	}
+	if w.BaseDir != filepath.Join(prepared, "ep1") {
+		t.Errorf("base dir: %s", w.BaseDir)
+	}
+	for _, d := range []string{DirScript, DirWav, DirMaster} {
+		if fi, err := os.Stat(w.Path(d)); err != nil || !fi.IsDir() {
+			t.Errorf("subdir %s: %v", d, err)
+		}
+	}
+	// Empty root falls back to the default root.
+	w2, err := m.EnsureIn("", "ep1")
+	if err != nil || w2.BaseDir != filepath.Join(m.Root(), "ep1") {
+		t.Errorf("fallback: %+v err=%v", w2, err)
+	}
+}
+
+func TestRootHelpersRoundTrip(t *testing.T) {
+	m := NewManager(t.TempDir())
+	w, err := m.Ensure("io")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := w.WriteFileAtomic("cache/index.json", []byte(`{"a":1}`)); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	b, err := w.ReadFile("cache/index.json")
+	if err != nil || string(b) != `{"a":1}` {
+		t.Fatalf("read: %q err=%v", b, err)
+	}
+	if _, err := w.Stat("cache/index.json"); err != nil {
+		t.Errorf("stat: %v", err)
+	}
+	if err := w.VerifyRegular("cache/index.json"); err != nil {
+		t.Errorf("verify regular: %v", err)
+	}
+	if err := w.RemoveAll("cache"); err != nil {
+		t.Errorf("removeall: %v", err)
+	}
+	if _, err := w.Stat("cache/index.json"); err == nil {
+		t.Errorf("file should be gone")
+	}
+}
+
+// TestSymlinkContainment pins the ADR-0010 security property: symlinks
+// planted inside an (agent-writable) workspace cannot make the server read
+// or write outside it.
+func TestSymlinkContainment(t *testing.T) {
+	outside := t.TempDir()
+	secret := filepath.Join(outside, "secret.txt")
+	if err := os.WriteFile(secret, []byte("outside data"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	m := NewManager(t.TempDir())
+	w, err := m.Ensure("evil")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sentinel := toolerr.New(toolerr.CodePathNotAllowed, "")
+
+	// Symlinked file pointing outside → reads fail with path_not_allowed.
+	if err := os.Symlink(secret, w.Path("script", "link.jsonl")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.ReadFile("script/link.jsonl"); !errors.Is(err, sentinel) {
+		t.Errorf("read through symlink should be path_not_allowed, got %v", err)
+	}
+	if err := w.VerifyRegular("script/link.jsonl"); !errors.Is(err, sentinel) {
+		t.Errorf("VerifyRegular on symlink should be path_not_allowed, got %v", err)
+	}
+
+	// Whole directory replaced by a symlink → writes fail and never land outside.
+	if err := os.RemoveAll(w.Path(DirWav)); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, w.Path(DirWav)); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.WriteFileAtomic("wav/10.wav", []byte("RIFF")); !errors.Is(err, sentinel) {
+		t.Errorf("write through symlinked dir should be path_not_allowed, got %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(outside, "10.wav")); err == nil {
+		t.Errorf("write escaped the workspace root")
+	}
+	if _, err := os.Stat(filepath.Join(outside, "10.wav.tmp")); err == nil {
+		t.Errorf("temp write escaped the workspace root")
 	}
 }

@@ -2,17 +2,27 @@
 //
 // One workspace = one work (a novel, an episode). Layout:
 //
-//	<workspace_dir>/<id>/
+//	<workspace_root>/<id>/
 //	├── script/        agent-authored script JSONL files
 //	├── casting.toml   character → voice model mapping
 //	├── dict/          registered pronunciation dictionary record
 //	├── wav/           per-line synthesized WAV files (<line_id>.wav)
 //	├── cache/         synthesis cache index
 //	└── master/        mastered outputs + credits + tmp artifacts
+//
+// The workspace root is either the server-configured default
+// (~/.voice-studio) or an agent-prepared directory passed per call as
+// workspace_root (ADR-0010: "the server works in the workplace the agent
+// prepared"). Because agent-prepared roots are agent-writable, every server
+// I/O inside a workspace goes through os.Root so symlinks planted in the
+// workspace cannot make the server read or write outside it (kernel-enforced
+// containment; ADR-0010).
 package workspace
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -36,15 +46,16 @@ type Workspace struct {
 	BaseDir string
 }
 
-// Path joins parts under the workspace base directory (no traversal check;
-// use ResolveInside for agent-supplied relative paths).
+// Path joins parts under the workspace base directory. Use it for DISPLAY
+// and for handing paths to external processes after VerifyRegular; all
+// server-side file I/O must go through the os.Root-backed helpers below.
 func (w *Workspace) Path(parts ...string) string {
 	return filepath.Join(append([]string{w.BaseDir}, parts...)...)
 }
 
-// ResolveInside resolves an agent-supplied relative path against the
-// workspace base directory and rejects anything that escapes it
-// (absolute paths, ".." traversal).
+// ResolveInside lexically validates an agent-supplied relative path and
+// returns it cleaned (workspace-relative). It exists for early, friendly
+// path_not_allowed errors; the enforcement boundary is os.Root.
 func (w *Workspace) ResolveInside(rel string) (string, error) {
 	if rel == "" {
 		return "", toolerr.New(toolerr.CodePathNotAllowed, "path must not be empty")
@@ -53,42 +64,195 @@ func (w *Workspace) ResolveInside(rel string) (string, error) {
 		return "", toolerr.Newf(toolerr.CodePathNotAllowed,
 			"path %q must be relative to the workspace root", rel)
 	}
-	cleaned := filepath.Clean(filepath.Join(w.BaseDir, rel))
-	if cleaned != w.BaseDir && !strings.HasPrefix(cleaned, w.BaseDir+string(filepath.Separator)) {
+	cleaned := filepath.Clean(rel)
+	if cleaned == ".." || strings.HasPrefix(cleaned, ".."+string(filepath.Separator)) {
 		return "", toolerr.Newf(toolerr.CodePathNotAllowed,
 			"path %q escapes the workspace root", rel)
 	}
 	return cleaned, nil
 }
 
-// Manager creates, lists, and deletes workspaces under a root directory.
+// openRoot opens the kernel-enforced containment anchor for this workspace.
+func (w *Workspace) openRoot() (*os.Root, error) {
+	r, err := os.OpenRoot(w.BaseDir)
+	if err != nil {
+		return nil, toolerr.Newf(toolerr.CodeWorkspaceFailed, "open workspace root: %v", err)
+	}
+	return r, nil
+}
+
+// mapRootErr converts os.Root escape errors into path_not_allowed so agents
+// get the same stable code as the lexical pre-check.
+func mapRootErr(op, rel string, err error) error {
+	if err == nil {
+		return nil
+	}
+	var pe *fs.PathError
+	if errors.As(err, &pe) && strings.Contains(pe.Err.Error(), "escapes") {
+		return toolerr.Newf(toolerr.CodePathNotAllowed,
+			"%s %q: path escapes the workspace root (symlink?)", op, rel)
+	}
+	return err
+}
+
+// ReadFile reads a workspace-relative file with symlink containment.
+func (w *Workspace) ReadFile(rel string) ([]byte, error) {
+	r, err := w.openRoot()
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+	b, err := r.ReadFile(rel)
+	return b, mapRootErr("read", rel, err)
+}
+
+// WriteFileAtomic writes a workspace-relative file via temp+rename, fully
+// inside the containment root.
+func (w *Workspace) WriteFileAtomic(rel string, data []byte) error {
+	r, err := w.openRoot()
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	if dir := filepath.Dir(rel); dir != "." {
+		if err := r.MkdirAll(dir, 0o755); err != nil {
+			// A path component replaced by a symlink (or file) surfaces as
+			// ErrExist here because os.Root refuses to traverse it.
+			if errors.Is(err, fs.ErrExist) {
+				return toolerr.Newf(toolerr.CodePathNotAllowed,
+					"mkdir %q: a path component is not a real directory (symlink?)", dir)
+			}
+			return mapRootErr("mkdir", dir, err)
+		}
+	}
+	tmp := rel + ".tmp"
+	if err := r.WriteFile(tmp, data, 0o644); err != nil {
+		return mapRootErr("write", tmp, err)
+	}
+	if err := r.Rename(tmp, rel); err != nil {
+		return mapRootErr("rename", rel, err)
+	}
+	return nil
+}
+
+// Stat stats a workspace-relative path with symlink containment.
+func (w *Workspace) Stat(rel string) (fs.FileInfo, error) {
+	r, err := w.openRoot()
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+	fi, err := r.Stat(rel)
+	return fi, mapRootErr("stat", rel, err)
+}
+
+// MkdirAll creates a workspace-relative directory tree.
+func (w *Workspace) MkdirAll(rel string) error {
+	r, err := w.openRoot()
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	return mapRootErr("mkdir", rel, r.MkdirAll(rel, 0o755))
+}
+
+// RemoveAll removes a workspace-relative tree.
+func (w *Workspace) RemoveAll(rel string) error {
+	r, err := w.openRoot()
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	return mapRootErr("remove", rel, r.RemoveAll(rel))
+}
+
+// VerifyRegular confirms rel is a regular file (not a symlink) inside the
+// workspace. Call it immediately before handing w.Path(rel) to an external
+// process (ffmpeg) that cannot inherit os.Root. The remaining check-to-spawn
+// race is accepted under the local single-user threat model (ADR-0010).
+func (w *Workspace) VerifyRegular(rel string) error {
+	r, err := w.openRoot()
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	fi, err := r.Lstat(rel)
+	if err != nil {
+		return mapRootErr("lstat", rel, err)
+	}
+	if !fi.Mode().IsRegular() {
+		return toolerr.Newf(toolerr.CodePathNotAllowed,
+			"%q is not a regular file (mode %s)", rel, fi.Mode())
+	}
+	return nil
+}
+
+// Manager creates, lists, and deletes workspaces under the server's default
+// root directory, and materializes workspaces under agent-prepared roots.
 type Manager struct {
 	root string
 }
 
-// NewManager returns a Manager rooted at dir.
+// NewManager returns a Manager whose default root is dir.
 func NewManager(dir string) *Manager {
 	return &Manager{root: filepath.Clean(dir)}
 }
 
-// Root returns the workspace root directory.
+// Root returns the default workspace root directory.
 func (m *Manager) Root() string { return m.root }
 
-// Ensure validates id and creates the workspace directory tree (idempotent).
+// Ensure validates id and creates the workspace directory tree under the
+// default root (idempotent).
 func (m *Manager) Ensure(id string) (*Workspace, error) {
+	return m.ensureUnder(m.root, id, true)
+}
+
+// EnsureIn materializes a workspace under an agent-prepared root
+// (ADR-0010). rootDir must be an absolute path to an existing directory —
+// "prepared" simply means the agent created it in a location it can write.
+// An empty rootDir falls back to the default root.
+func (m *Manager) EnsureIn(rootDir, id string) (*Workspace, error) {
+	if rootDir == "" {
+		return m.Ensure(id)
+	}
+	if !filepath.IsAbs(rootDir) {
+		return nil, toolerr.Newf(toolerr.CodePathNotAllowed,
+			"workspace_root %q must be an absolute path", rootDir)
+	}
+	fi, err := os.Stat(rootDir)
+	if err != nil {
+		return nil, toolerr.Newf(toolerr.CodePathNotAllowed,
+			"workspace_root %q does not exist — create it first (the agent prepares the workplace)", rootDir)
+	}
+	if !fi.IsDir() {
+		return nil, toolerr.Newf(toolerr.CodePathNotAllowed,
+			"workspace_root %q is not a directory", rootDir)
+	}
+	return m.ensureUnder(filepath.Clean(rootDir), id, false)
+}
+
+func (m *Manager) ensureUnder(root, id string, createRoot bool) (*Workspace, error) {
 	if err := ValidateID(id); err != nil {
 		return nil, err
 	}
-	w := &Workspace{ID: id, BaseDir: filepath.Join(m.root, id)}
-	for _, d := range []string{DirScript, DirDict, DirWav, DirCache, DirMaster} {
-		if err := os.MkdirAll(w.Path(d), 0o755); err != nil {
+	base := filepath.Join(root, id)
+	if createRoot {
+		if err := os.MkdirAll(base, 0o755); err != nil {
 			return nil, toolerr.Newf(toolerr.CodeWorkspaceFailed, "create workspace dir: %v", err)
+		}
+	} else if err := os.Mkdir(base, 0o755); err != nil && !errors.Is(err, fs.ErrExist) {
+		return nil, toolerr.Newf(toolerr.CodeWorkspaceFailed, "create workspace dir: %v", err)
+	}
+	w := &Workspace{ID: id, BaseDir: base}
+	for _, d := range []string{DirScript, DirDict, DirWav, DirCache, DirMaster} {
+		if err := w.MkdirAll(d); err != nil {
+			return nil, err
 		}
 	}
 	return w, nil
 }
 
-// List returns the IDs of existing workspaces (sorted).
+// List returns the IDs of existing workspaces under the default root (sorted).
 func (m *Manager) List() ([]string, error) {
 	entries, err := os.ReadDir(m.root)
 	if os.IsNotExist(err) {
@@ -107,8 +271,8 @@ func (m *Manager) List() ([]string, error) {
 	return ids, nil
 }
 
-// Delete removes a workspace and all of its state. Refuses to remove anything
-// that is not a direct child of the workspace root (defense in depth on top
+// Delete removes a workspace under the default root. Refuses to remove
+// anything that is not a direct child of the root (defense in depth on top
 // of ValidateID).
 func (m *Manager) Delete(id string) error {
 	if err := ValidateID(id); err != nil {
