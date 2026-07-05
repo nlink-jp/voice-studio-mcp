@@ -11,9 +11,10 @@ var configPath string
 var rootCmd = &cobra.Command{
 	Use:   "voice-studio-mcp",
 	Short: "Local TTS voice studio MCP server",
-	Long: `voice-studio-mcp exposes local speech synthesis (AivisSpeech Engine) as an MCP server:
-speaker catalog with license metadata, pronunciation dictionaries, batch script
-synthesis, and mastering for radio-drama / audiobook production.
+	Long: `voice-studio-mcp exposes local multi-speaker Japanese speech synthesis
+(AivisSpeech Engine) as an MCP server: speaker catalog with license metadata,
+pronunciation dictionaries, batch script synthesis, and mastering for narrated
+audio (radio drama, audiobook, podcast, briefing, ...). Japanese only.
 
 When invoked with no subcommand, behaves like ` + "`voice-studio-mcp serve`" + ` and reads JSON-RPC messages from stdin.`,
 	// Don't dump the usage help on RunE errors; cobra still prints "Error: ..." to stderr.

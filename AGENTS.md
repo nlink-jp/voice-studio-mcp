@@ -3,7 +3,9 @@
 ## Project summary
 
 MCP stdio server that gives AI agents (Claude Code / Cowork) local
-speech-synthesis capabilities for radio-drama / audiobook production.
+multi-speaker **Japanese** speech synthesis for narrated audio (radio drama,
+audiobook, podcast, briefing, …). Japanese only — the engine's voice models
+are Japanese, so other languages are not supported.
 Wraps **AivisSpeech Engine** (VOICEVOX-compatible HTTP API on
 `127.0.0.1:10101`, Style-Bert-VITS2-family models, CPU/ONNX inference).
 Six tools: `list_speakers`, `register_dictionary`, `synthesize_script`

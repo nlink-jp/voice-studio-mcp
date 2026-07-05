@@ -1,15 +1,17 @@
 # voice-studio-mcp Setup Guide
 
-From zero to your first radio-drama audio.
+From zero to your first synthesized audio. **Japanese only** — the AivisSpeech
+Engine's voice models are Japanese; other languages are not supported.
 
 ## 1. Prerequisites
 
 | Requirement | Notes |
 |-------------|-------|
+| Language | **Japanese only** — the engine synthesizes Japanese; non-Japanese text is not supported |
 | OS | macOS 13+ / Apple Silicon (v1 target) |
 | AivisSpeech | Install the .dmg from https://aivis-project.com/ and **launch the GUI once** to complete first-run setup (default voice model download) |
 | ffmpeg | `brew install ffmpeg` (used only by the `master` tool) |
-| Go 1.23+ | Only when building from source |
+| Go 1.25+ | Only when building from source |
 
 > If the AivisSpeech GUI has never been launched, the engine may fail to
 > start because no model has been fetched yet. `doctor` will tell you.

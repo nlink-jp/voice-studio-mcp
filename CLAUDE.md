@@ -5,10 +5,11 @@
 ## Project overview
 
 MCP stdio server that gives AI agents (Claude Code / Cowork) local
-speech-synthesis capabilities for radio-drama / audiobook production.
-Wraps AivisSpeech Engine (VOICEVOX-compatible API); the agent does the
-intellectual work (script conversion, casting, direction), this server
-does the mechanical work (synthesis, caching, retakes, mastering).
+multi-speaker Japanese speech synthesis for narrated audio (radio drama,
+audiobook, podcast, briefing, …). Japanese only (AivisSpeech Engine's voice
+models are Japanese). Wraps AivisSpeech Engine (VOICEVOX-compatible API);
+the agent does the intellectual work (script conversion, casting, direction),
+this server does the mechanical work (synthesis, caching, retakes, mastering).
 Skeleton ported from `data-toolbox-mcp`.
 
 ## Non-negotiable rules

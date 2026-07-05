@@ -1,9 +1,10 @@
 # voice-studio-mcp — how to use this server
 
-This server turns a script (台本) into radio-drama / audiobook audio using a
-local AivisSpeech Engine. You (the agent) do the creative work — script
-conversion, casting, direction; the server does synthesis, caching, retakes,
-and mastering. Tools return compact JSON (paths, counts, durations) — never
+This server turns a multi-speaker script (台本) into narrated Japanese audio
+(radio drama, audiobook, podcast, briefing, …) using a local AivisSpeech
+Engine. It synthesizes **Japanese only** — other languages are not supported.
+You (the agent) do the creative work — script conversion, casting, direction;
+the server does synthesis, caching, retakes, and mastering. Tools return compact JSON (paths, counts, durations) — never
 audio bytes; the produced files are played by the human user on this host.
 
 ## Workspace model (read this first)

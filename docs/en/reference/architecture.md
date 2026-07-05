@@ -6,10 +6,12 @@
 
 ## 0. In one sentence
 
-An MCP stdio server that turns an agent-authored script JSONL into finished
-radio-drama / audiobook audio using a local AivisSpeech Engine and ffmpeg —
+An MCP stdio server that turns an agent-authored, multi-speaker script JSONL
+into finished narrated **Japanese** audio (radio drama, audiobook, podcast,
+briefing, …) using a local AivisSpeech Engine and ffmpeg —
 **judgment and creativity stay on the agent side; deterministic heavy
-lifting lives here**. That split drives every design below.
+lifting lives here**. That split drives every design below. (Japanese only —
+the engine's voice models are Japanese.)
 
 ```
 ┌────────────────────┐  stdio (JSON-RPC / MCP)

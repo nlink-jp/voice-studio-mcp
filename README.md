@@ -1,12 +1,15 @@
 # voice-studio-mcp
 
-> Local speech synthesis for AI-agent-driven radio-drama / audiobook
-> production, exposed as a single-binary MCP server (AivisSpeech Engine
-> backend).
+> Local, multi-speaker **Japanese** speech synthesis for AI agents — turn a
+> multi-voice script into mastered audio (radio drama, audiobook, podcast,
+> panel, briefing, …). Single-binary MCP server, AivisSpeech Engine backend.
+>
+> **Language: Japanese only.** The AivisSpeech Engine synthesizes Japanese;
+> other languages are not supported.
 
 ## Why this exists
 
-Turning a novel into a radio drama takes two kinds of work: the
+Producing scripted, multi-voice spoken audio takes two kinds of work: the
 *intellectual* part (script conversion, speaker attribution, performance
 direction) and the *mechanical* part (speech synthesis, retakes,
 mastering). AI agents such as Claude Code and Cowork handle the first
@@ -14,7 +17,12 @@ part well — but they have no voice. voice-studio-mcp gives them one:
 a fully local MCP server that wraps
 [AivisSpeech Engine](https://github.com/Aivis-Project/AivisSpeech-Engine)
 (VOICEVOX-compatible API, Style-Bert-VITS2-family models) and turns an
-agent-authored script into mastered audio. No cloud APIs, no credentials.
+agent-authored script into mastered audio. Radio drama and audiobooks were
+its first use cases; the bundled multi-actor-narration skill adds podcasts,
+panels, news briefings, and lessons. No cloud APIs, no credentials.
+
+The engine's voice models are **Japanese**, so voice-studio-mcp produces
+Japanese audio only — other languages are out of scope.
 
 ## Features
 
@@ -37,6 +45,7 @@ agent-authored script into mastered audio. No cloud APIs, no credentials.
 
 ## Requirements
 
+- **Japanese-language content only** — the engine's voice models are Japanese; non-Japanese text is not supported
 - macOS on Apple Silicon (v1 target)
 - [AivisSpeech](https://aivis-project.com/) installed (bundles the engine)
 - `ffmpeg` in PATH (only for the `master` tool): `brew install ffmpeg`

@@ -18,9 +18,10 @@ var usageMarkdown string
 
 // Instructions is the short initialize-time hint that makes get_usage
 // discoverable (surfaced via the MCP `instructions` field).
-const Instructions = "voice-studio-mcp produces radio-drama / audiobook audio from script JSONL " +
-	"via a local TTS engine. It is stateful and file-mediated: inputs live in a workspace " +
-	"directory, outputs are returned as file paths (never audio bytes). " +
+const Instructions = "voice-studio-mcp produces multi-speaker narrated Japanese audio " +
+	"(radio drama, audiobook, podcast, briefing, ...) from script JSONL via a local TTS engine. " +
+	"Japanese only -- other languages are not supported. It is stateful and file-mediated: " +
+	"inputs live in a workspace directory, outputs are returned as file paths (never audio bytes). " +
 	"Call the get_usage tool before your first production to learn the workspace model, " +
 	"the script schema, and the recovery table."
 
