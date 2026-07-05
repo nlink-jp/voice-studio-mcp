@@ -1,0 +1,27 @@
+# 対談ポッドキャスト型 キャスティング雛形
+# 実行時に list_speakers の最新 uuid / style_id を確認して埋めること。
+# license_checked は「ユーザがライセンス条件を確認した後」にのみ true。
+
+[characters."ホスト"]
+speaker_uuid = "e756b8e4-b606-4e15-99b1-3f9c6a1b2317"  # まお
+style_id     = 888753760                                # ノーマル
+credit       = "AivisSpeech: まお"
+license_checked = false
+  [characters."ホスト".styles]
+  "おちつき" = 888753763
+  "からかい" = 888753764
+
+[characters."ゲスト"]
+speaker_uuid = "6dd8366d-b928-4d60-ac41-b3010c85c08e"  # 猩々博士 (雑談ボイス)
+style_id     = 5306848                                  # ノーマル
+credit       = "AivisSpeech: 猩々博士 (雑談ボイス)"
+license_checked = false
+
+# 深掘り回で第2ゲストを足す場合の例（性別・声質を変える）
+# [characters."ゲスト2"]
+# speaker_uuid = "e7b467ab-3947-4876-892f-fea9a75fd9e4"  # TANAKA（明るめ）
+# style_id     = 1628969216
+# credit       = "AivisSpeech: TANAKA"
+# license_checked = false
+#   [characters."ゲスト2".styles]
+#   "Happy" = 1628969218

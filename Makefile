@@ -17,7 +17,7 @@ NOTARY_PROFILE    ?= nlink-jp-notary
 PLATFORMS := \
 	darwin/arm64
 
-.PHONY: build build-all package test test-e2e install-skill uninstall-skill clean help
+.PHONY: build build-all package test test-e2e package-skill install-skill uninstall-skill clean help
 
 ## build: Build binary for the current OS/Arch → ./dist/voice-studio-mcp
 build:
@@ -66,17 +66,23 @@ test-e2e: build
 	VOICE_STUDIO_TEST_BINARY=$(abspath $(BIN_DIR)/$(BINARY)) go test -tags e2e ./e2e/...
 
 SKILLS_DEST ?= $(HOME)/.claude/skills
+SKILL_NAME  := multi-actor-narration
 
-## install-skill: Install the bundled radio-drama skill into ~/.claude/skills
+## package-skill: Build the bundled skill into dist/multi-actor-narration.skill
+package-skill:
+	@bash skills/build.sh
+
+## install-skill: Install the bundled multi-actor-narration skill into ~/.claude/skills
 install-skill:
 	@mkdir -p $(SKILLS_DEST)
-	cp -R skills/radio-drama $(SKILLS_DEST)/
-	@echo "installed: radio-drama -> $(SKILLS_DEST)/radio-drama"
+	rm -rf $(SKILLS_DEST)/$(SKILL_NAME)
+	cp -R skills/$(SKILL_NAME) $(SKILLS_DEST)/
+	@echo "installed: $(SKILL_NAME) -> $(SKILLS_DEST)/$(SKILL_NAME)"
 
-## uninstall-skill: Remove the installed radio-drama skill
+## uninstall-skill: Remove the installed multi-actor-narration skill
 uninstall-skill:
-	rm -rf $(SKILLS_DEST)/radio-drama
-	@echo "removed: $(SKILLS_DEST)/radio-drama"
+	rm -rf $(SKILLS_DEST)/$(SKILL_NAME)
+	@echo "removed: $(SKILLS_DEST)/$(SKILL_NAME)"
 
 ## clean: Remove build artifacts
 clean:

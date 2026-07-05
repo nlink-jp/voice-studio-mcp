@@ -1,0 +1,24 @@
+# 教材ナレーション型 キャスティング雛形
+# 講師と生徒役で年齢・声質を明確に分けると役割が伝わりやすい。
+# 実行時に list_speakers の最新値を確認。license_checked はユーザ確認後に true。
+
+[characters."講師"]
+speaker_uuid = "452fee2b-d102-4053-bccd-c0f8c265c147"  # ろてじん（長老ボイス）
+style_id     = 391794336                                # ノーマル
+credit       = "AivisSpeech: ろてじん（長老ボイス）"
+license_checked = false
+
+[characters."生徒"]
+speaker_uuid = "5680ac39-43c9-487a-bc3e-018c0d29cc38"  # コハク
+style_id     = 1878365376                               # ノーマル
+credit       = "AivisSpeech: コハク"
+license_checked = false
+  [characters."生徒".styles]
+  "あまあま" = 1878365377
+
+# 理解度の違う2人目の生徒を足す場合
+# [characters."生徒2"]
+# speaker_uuid = "27dce2b7-b033-4b82-a722-d18ddba66d94"  # 中2
+# style_id     = 604166016
+# credit       = "AivisSpeech: 中2"
+# license_checked = false

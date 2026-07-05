@@ -1,0 +1,30 @@
+# 朗読劇 / オーディオブック型 キャスティング雛形
+# 実行時に list_speakers の最新 uuid / style_id を確認して埋めること。
+# license_checked は「ユーザがライセンス条件を確認した後」にのみ true。
+# ナレーター＝落ち着いた安定声、登場人物＝性格に合う声（強弱の要る役は感情豊富な話者）。
+
+[characters."ナレーター"]
+speaker_uuid = "e756b8e4-b606-4e15-99b1-3f9c6a1b2317"  # まお（多彩で汎用）
+style_id     = 888753760                                # ノーマル
+credit       = "AivisSpeech: まお"
+license_checked = false
+  [characters."ナレーター".styles]
+  "おちつき" = 888753763
+
+# 感情の起伏がある役には、標準＋喜怒哀楽が揃った話者を割り当てる
+[characters."美咲"]
+speaker_uuid = "b01070b1-7243-4d5b-825f-a56ab2eb2bc2"  # みちのくあいり（感情フルセット）
+style_id     = 0                                        # list_speakers の「標準」style_id に差し替え
+credit       = "AivisSpeech: みちのくあいり"
+license_checked = false
+  [characters."美咲".styles]  # 台本の style 名 → style id（list_speakers で確認）
+  "悲しみ" = 0
+  "怒り"   = 0
+  "驚き"   = 0
+
+# 登場人物が増えたら、性別・声質を変えて聞き分けやすくする
+# [characters."旅人"]
+# speaker_uuid = "396a746d-742f-4e43-b722-1182a7fab9af"  # morioki（落ち着いた男性）
+# style_id     = 497929760
+# credit       = "AivisSpeech: morioki"
+# license_checked = false

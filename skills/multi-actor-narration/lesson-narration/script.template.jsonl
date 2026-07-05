@@ -1,0 +1,12 @@
+{"id":10,"scene":1,"speaker":"講師","text":"今日のテーマは『変数とは何か』です。この単元が終わると、変数を自分の言葉で説明できるようになります。","speed":0.95,"pause_after_ms":800}
+{"id":20,"scene":2,"speaker":"講師","text":"まず、変数とは『名前をつけた箱』だと考えてください。中にデータを入れておけます。","speed":0.93,"pause_after_ms":600}
+{"id":30,"scene":2,"speaker":"生徒","text":"箱、ですか。えっと、その箱には何を入れられるんですか？","speed":1.0,"pause_after_ms":500}
+{"id":40,"scene":2,"speaker":"講師","text":"いい質問ですね。数でも、文字でも入れられます。たとえば『年齢』という名前の箱に、30という数を入れる、という具合です。","speed":0.95,"pause_after_ms":600}
+{"id":50,"scene":2,"speaker":"生徒","text":"なるほど。つまり、データにあだ名をつけて、後で呼び出せるようにするってことですね。","intensity":1.1,"speed":1.0,"pause_after_ms":600}
+{"id":60,"scene":2,"speaker":"講師","text":"その通りです。よく言い換えられました。","intensity":1.1,"speed":0.97,"pause_after_ms":800}
+{"id":70,"scene":3,"speaker":"講師","text":"次に、箱の中身は入れ替えられます。だから『変わる数』で変数、と呼ぶんです。","speed":0.93,"pause_after_ms":500}
+{"id":80,"scene":3,"speaker":"生徒","text":"あ、そこがピンと来てなかったんですけど、中身を後から変えられるから『変わる』なんですね。","speed":1.0,"pause_after_ms":500}
+{"id":90,"scene":3,"speaker":"講師","text":"そうです。年齢の箱を、誕生日に31へ入れ替える。名前はそのまま、中身だけ変わる。ここが要点です。","speed":0.9,"pause_after_ms":900}
+{"id":100,"scene":4,"speaker":"講師","text":"では確認です。変数を一言で言うと？","speed":0.95,"pause_after_ms":700}
+{"id":110,"scene":4,"speaker":"生徒","text":"名前をつけた箱で、中身を後から入れ替えられるもの、です。","intensity":1.1,"speed":1.0,"pause_after_ms":500}
+{"id":120,"scene":4,"speaker":"講師","text":"完璧です。今日の要点は3つ。名前がある。中身を入れられる。中身は変えられる。次回は箱の種類、型を学びます。","speed":0.95,"pause_after_ms":1000}

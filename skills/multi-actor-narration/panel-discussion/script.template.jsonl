@@ -1,0 +1,15 @@
+{"id":10,"scene":1,"speaker":"司会","text":"本日のテーマは『生成AIを社内業務にどこまで任せるか』です。専門家3名にお越しいただきました。","speed":0.98,"pause_after_ms":500}
+{"id":20,"scene":1,"speaker":"司会","text":"このテーマ、実は意見が分かれます。まず、任せることに積極的な立場から伺います。","speed":0.97,"pause_after_ms":700}
+{"id":30,"scene":2,"speaker":"専門家A","text":"私は積極派です。定型業務をAIに任せれば、人はより判断の要る仕事に集中できます。","intensity":1.2,"speed":1.0,"pause_after_ms":400}
+{"id":40,"scene":2,"speaker":"専門家B","text":"一方で慎重に見るべき点もあります。AIの出力には誤りが混じり得る。任せきりは危険です。","intensity":1.2,"speed":0.98,"pause_after_ms":400}
+{"id":50,"scene":2,"speaker":"専門家A","text":"その懸念はもっともです。だからこそ、確認プロセスを前提に設計する、という条件付きの導入を提案します。","speed":0.98,"pause_after_ms":400}
+{"id":60,"scene":2,"speaker":"専門家C","text":"現場から言えば、誰が最終責任を持つか、の線引きが曖昧だと運用が回りません。ここが実務の肝です。","speed":0.98,"pause_after_ms":500}
+{"id":70,"scene":2,"speaker":"司会","text":"整理すると、効率化の利点は共有しつつ、正確さの検証と責任の所在をどう設計するか、が論点ですね。","style":"落ち着き","speed":0.95,"pause_after_ms":800}
+{"id":80,"scene":3,"speaker":"司会","text":"次の論点です。コスト面ではどう見ますか。","speed":1.0,"pause_after_ms":400}
+{"id":90,"scene":3,"speaker":"専門家B","text":"初期の効率化は分かりやすいですが、検証や教育の隠れコストを見落としがちです。","speed":0.98,"pause_after_ms":400}
+{"id":100,"scene":3,"speaker":"専門家A","text":"確かに。小さく始めて効果を測りながら広げる、という進め方なら過大投資を避けられます。","speed":1.0,"pause_after_ms":500}
+{"id":110,"scene":4,"speaker":"司会","text":"最後に一言ずつお願いします。","speed":1.0,"pause_after_ms":400}
+{"id":120,"scene":4,"speaker":"専門家A","text":"条件を整えれば大きな武器になります。","intensity":1.1,"speed":1.0,"pause_after_ms":300}
+{"id":130,"scene":4,"speaker":"専門家B","text":"過信せず、検証を組み込むこと。","speed":0.98,"pause_after_ms":300}
+{"id":140,"scene":4,"speaker":"専門家C","text":"責任の線引きを先に決めること。","speed":0.98,"pause_after_ms":500}
+{"id":150,"scene":4,"speaker":"司会","text":"合意点は『検証と責任設計を前提に、小さく始める』。対立点はスピード感でした。ありがとうございました。","style":"落ち着き","speed":0.95,"pause_after_ms":1000}

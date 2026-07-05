@@ -1,0 +1,30 @@
+# パネル解説型 キャスティング雛形
+# 声の聞き分けが最重要。司会と専門家、専門家どうしで性別・年齢・声質を分ける。
+# 実行時に list_speakers の最新値を確認。license_checked はユーザ確認後に true。
+
+[characters."司会"]
+speaker_uuid = "16e681b5-474d-4b7d-b58b-0fb45c6a3dec"  # hinakoyuhara
+style_id     = 2058221184                               # ノーマル
+credit       = "AivisSpeech: hinakoyuhara"
+license_checked = false
+  [characters."司会".styles]
+  "落ち着き" = 2058221186
+
+[characters."専門家A"]  # 推進・積極の立場
+speaker_uuid = "6dd8366d-b928-4d60-ac41-b3010c85c08e"  # 猩々博士
+style_id     = 5306848
+credit       = "AivisSpeech: 猩々博士 (雑談ボイス)"
+license_checked = false
+
+[characters."専門家B"]  # 慎重・懐疑の立場
+speaker_uuid = "452fee2b-d102-4053-bccd-c0f8c265c147"  # ろてじん（長老ボイス）
+style_id     = 391794336
+credit       = "AivisSpeech: ろてじん（長老ボイス）"
+license_checked = false
+
+# 実務・現場視点の第3者を足す場合
+# [characters."専門家C"]
+# speaker_uuid = "b1ca560f-f212-4e67-ab7d-0a4f5afb75a8"  # 花音（女性で差別化）
+# style_id     = 1325133120
+# credit       = "AivisSpeech: 花音"
+# license_checked = false

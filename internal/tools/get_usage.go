@@ -9,7 +9,7 @@ import (
 )
 
 // usageMarkdown is the client-neutral operating manual returned by get_usage
-// (ADR-0010: clients without the bundled radio-drama skill should not have
+// (ADR-0010: clients without the bundled multi-actor-narration skill should not have
 // to operate this stateful, file-mediated server by trial and error).
 // Coherence with the real tools/errors/schema is pinned by usage_test.go.
 //

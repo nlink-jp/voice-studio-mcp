@@ -1,0 +1,16 @@
+# ニュース/朝礼ブリーフィング型 キャスティング雛形
+# 定期配信では固定して毎回の承認を省く運用が軽い。
+# 実行時に list_speakers の最新値を確認。license_checked はユーザ確認後に true。
+
+[characters."アンカー"]
+speaker_uuid = "accf08c8-0237-485f-98af-20b71cf2121b"  # 澤原 玄二郎
+style_id     = 2029042368                               # ノーマル
+credit       = "AivisSpeech: 澤原 玄二郎"
+license_checked = false
+
+# 詳報を担当するレポーターを足す場合（1人運用なら不要）
+[characters."レポーター"]
+speaker_uuid = "16e681b5-474d-4b7d-b58b-0fb45c6a3dec"  # hinakoyuhara
+style_id     = 2058221184
+credit       = "AivisSpeech: hinakoyuhara"
+license_checked = false

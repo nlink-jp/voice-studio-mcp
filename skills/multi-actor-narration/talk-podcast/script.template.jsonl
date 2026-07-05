@@ -1,0 +1,11 @@
+{"id":10,"scene":1,"speaker":"ホスト","text":"こんにちは、今日のテーマは『社内文書の要約AI』です。ゲストに詳しい方をお呼びしています。よろしくお願いします。","speed":1.0,"pause_after_ms":500}
+{"id":20,"scene":1,"speaker":"ゲスト","text":"よろしくお願いします。今日は、なぜ今この話題が注目されているのか、から順に見ていきましょう。","style":"おちつき","speed":1.0,"pause_after_ms":700}
+{"id":30,"scene":2,"speaker":"ホスト","text":"さっそくですが、そもそも『要約AI』って、普通の検索とは何が違うんですか？","speed":1.02,"pause_after_ms":500}
+{"id":40,"scene":2,"speaker":"ゲスト","text":"いい質問ですね。検索が『関連する場所を探す』のに対して、要約AIは『読んで、短くまとめ直す』んです。","intensity":1.1,"speed":0.98,"pause_after_ms":300}
+{"id":50,"scene":2,"speaker":"ゲスト","text":"たとえるなら、分厚い議事録を、要点だけ口頭で報告してくれる同僚みたいなものですね。","speed":0.95,"pause_after_ms":600}
+{"id":60,"scene":2,"speaker":"ホスト","text":"なるほど、報告してくれる同僚。それは助かりますね。","intensity":1.2,"volume":0.85,"pause_after_ms":500}
+{"id":70,"scene":3,"speaker":"ホスト","text":"では次に、実際に導入するとき、気をつける点はありますか？","speed":1.0,"pause_after_ms":500}
+{"id":80,"scene":3,"speaker":"ゲスト","text":"ポイントは3つです。ひとつ、機密情報の扱い。ふたつ、要約の正確さの検証。みっつ、人が最終確認する運用にすること。","style":"おちつき","speed":0.92,"pause_after_ms":800}
+{"id":90,"scene":4,"speaker":"ホスト","text":"よく分かりました。今日のまとめをお願いできますか。","speed":1.0,"pause_after_ms":400}
+{"id":100,"scene":4,"speaker":"ゲスト","text":"要約AIは『読んでまとめる同僚』。導入時は機密・正確さ・人の確認の3点を押さえる。まずは小さく試すのがおすすめです。","speed":0.97,"pause_after_ms":600}
+{"id":110,"scene":4,"speaker":"ホスト","text":"ありがとうございました。それではまた次回、お楽しみに。","intensity":1.1,"speed":1.02,"pause_after_ms":1000}
