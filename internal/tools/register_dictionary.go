@@ -42,6 +42,7 @@ func registerRegisterDictionary(srv *mcpserver.Server, d *Deps) {
   "required": ["workspace_id", "words"],
   "properties": {
     "workspace_id": {"type": "string"},
+    "workspace_root": {"type": "string", "description": "Absolute path to an agent-prepared workspace root directory (create it first with your own file tools); omit to use the server-configured default (~/.voice-studio)"},
     "words": {
       "type": "array",
       "minItems": 1,
@@ -63,8 +64,9 @@ func registerRegisterDictionary(srv *mcpserver.Server, d *Deps) {
 }`),
 	}, func(ctx context.Context, args json.RawMessage) (any, error) {
 		var in struct {
-			WorkspaceID string       `json:"workspace_id"`
-			Words       []dictWordIn `json:"words"`
+			WorkspaceID   string       `json:"workspace_id"`
+			WorkspaceRoot string       `json:"workspace_root"`
+			Words         []dictWordIn `json:"words"`
 		}
 		if err := unmarshalStrict(args, &in); err != nil {
 			return nil, err
@@ -72,7 +74,7 @@ func registerRegisterDictionary(srv *mcpserver.Server, d *Deps) {
 		if len(in.Words) == 0 {
 			return nil, toolerr.New(toolerr.CodeMissingArgument, "words must not be empty")
 		}
-		ws, err := d.WS.Ensure(in.WorkspaceID)
+		ws, err := d.WS.EnsureIn(in.WorkspaceRoot, in.WorkspaceID)
 		if err != nil {
 			return nil, err
 		}

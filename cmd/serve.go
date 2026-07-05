@@ -16,6 +16,7 @@ import (
 	"github.com/nlink-jp/voice-studio-mcp/internal/engine"
 	"github.com/nlink-jp/voice-studio-mcp/internal/logging"
 	"github.com/nlink-jp/voice-studio-mcp/internal/mcpserver"
+	"github.com/nlink-jp/voice-studio-mcp/internal/tools"
 	"github.com/nlink-jp/voice-studio-mcp/internal/transport"
 )
 
@@ -42,6 +43,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 
 	tr := transport.NewStdioTransport(os.Stdin, os.Stdout)
 	srv := mcpserver.New("voice-studio-mcp", Version, tr, logger)
+	srv.SetInstructions(tools.Instructions)
 
 	client := engine.NewClient(cfg.Engine.URL,
 		time.Duration(cfg.Engine.RequestTimeoutSeconds)*time.Second)

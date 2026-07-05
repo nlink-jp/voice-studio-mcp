@@ -40,6 +40,7 @@ func registerSynthesizeLine(srv *mcpserver.Server, d *Deps) {
   "required": ["workspace_id", "line"],
   "properties": {
     "workspace_id": {"type": "string"},
+    "workspace_root": {"type": "string", "description": "Absolute path to an agent-prepared workspace root directory (create it first with your own file tools); omit to use the server-configured default (~/.voice-studio)"},
     "line": ` + lineSchema + `,
     "casting_path": {"type": "string", "description": "Casting table path relative to the workspace root (default casting.toml)"},
     "style_id": {"type": "integer", "description": "Explicit global style id; overrides casting resolution"},
@@ -49,16 +50,17 @@ func registerSynthesizeLine(srv *mcpserver.Server, d *Deps) {
 }`),
 	}, func(ctx context.Context, args json.RawMessage) (any, error) {
 		var in struct {
-			WorkspaceID string      `json:"workspace_id"`
-			Line        script.Line `json:"line"`
-			CastingPath string      `json:"casting_path"`
-			StyleID     *int        `json:"style_id"`
-			Force       bool        `json:"force"`
+			WorkspaceID   string      `json:"workspace_id"`
+			WorkspaceRoot string      `json:"workspace_root"`
+			Line          script.Line `json:"line"`
+			CastingPath   string      `json:"casting_path"`
+			StyleID       *int        `json:"style_id"`
+			Force         bool        `json:"force"`
 		}
 		if err := unmarshalStrict(args, &in); err != nil {
 			return nil, err
 		}
-		ws, err := d.WS.Ensure(in.WorkspaceID)
+		ws, err := d.WS.EnsureIn(in.WorkspaceRoot, in.WorkspaceID)
 		if err != nil {
 			return nil, err
 		}

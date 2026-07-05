@@ -50,6 +50,7 @@ func Register(srv *mcpserver.Server, d *Deps) {
 	if d.Runner == nil {
 		d.Runner = master.ExecRunner{}
 	}
+	registerGetUsage(srv, d)
 	registerListSpeakers(srv, d)
 	registerRegisterDictionary(srv, d)
 	registerSynthesizeLine(srv, d)

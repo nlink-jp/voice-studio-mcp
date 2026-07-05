@@ -23,6 +23,7 @@ func registerMaster(srv *mcpserver.Server, d *Deps) {
   "required": ["workspace_id", "script_path"],
   "properties": {
     "workspace_id": {"type": "string"},
+    "workspace_root": {"type": "string", "description": "Absolute path to an agent-prepared workspace root directory (create it first with your own file tools); omit to use the server-configured default (~/.voice-studio)"},
     "script_path": {"type": "string", "description": "Script JSONL path relative to the workspace root"},
     "casting_path": {"type": "string", "description": "Casting table path relative to the workspace root (default casting.toml)"},
     "format": {"type": "string", "enum": ["mp3", "m4b"], "description": "Output format (default mp3)"},
@@ -33,12 +34,13 @@ func registerMaster(srv *mcpserver.Server, d *Deps) {
 }`),
 	}, func(ctx context.Context, args json.RawMessage) (any, error) {
 		in := struct {
-			WorkspaceID string `json:"workspace_id"`
-			ScriptPath  string `json:"script_path"`
-			CastingPath string `json:"casting_path"`
-			Format      string `json:"format"`
-			OutputName  string `json:"output_name"`
-			Chapters    *bool  `json:"chapters"`
+			WorkspaceID   string `json:"workspace_id"`
+			WorkspaceRoot string `json:"workspace_root"`
+			ScriptPath    string `json:"script_path"`
+			CastingPath   string `json:"casting_path"`
+			Format        string `json:"format"`
+			OutputName    string `json:"output_name"`
+			Chapters      *bool  `json:"chapters"`
 		}{}
 		if err := unmarshalStrict(args, &in); err != nil {
 			return nil, err
@@ -57,7 +59,7 @@ func registerMaster(srv *mcpserver.Server, d *Deps) {
 			return nil, toolerr.Newf(toolerr.CodeInvalidArguments, "output_name must be a plain file name, got %q", in.OutputName)
 		}
 
-		ws, err := d.WS.Ensure(in.WorkspaceID)
+		ws, err := d.WS.EnsureIn(in.WorkspaceRoot, in.WorkspaceID)
 		if err != nil {
 			return nil, err
 		}

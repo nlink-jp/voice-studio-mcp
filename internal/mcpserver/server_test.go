@@ -87,6 +87,33 @@ func TestBasicRoundTrip(t *testing.T) {
 	}
 }
 
+// TestInitializeInstructions checks the MCP instructions field round-trips
+// (and is omitted when unset).
+func TestInitializeInstructions(t *testing.T) {
+	req := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"t","version":"1"}}}` + "\n"
+
+	var out bytes.Buffer
+	tr := transport.NewStdioTransport(bytes.NewBufferString(req), &out)
+	srv := New("voice-studio-mcp", "test", tr, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	srv.SetInstructions("call get_usage first")
+	if err := srv.Serve(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), `"instructions":"call get_usage first"`) {
+		t.Errorf("instructions missing: %s", out.String())
+	}
+
+	out.Reset()
+	tr = transport.NewStdioTransport(bytes.NewBufferString(req), &out)
+	srv = New("voice-studio-mcp", "test", tr, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if err := srv.Serve(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out.String(), `"instructions"`) {
+		t.Errorf("unset instructions must be omitted: %s", out.String())
+	}
+}
+
 // TestParseError checks that malformed JSON gets a parse-error response with id=null.
 func TestParseError(t *testing.T) {
 	in := bytes.NewBufferString("not-json\n")
