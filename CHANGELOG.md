@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2026-07-05
+
+### Fixed
+
+- `doctor` reported the engine signature state with a static message
+  ("unsigned / mismatched nested signatures") even when the signature
+  verifies and only the download quarantine flag is set. It now reports
+  the conditions actually detected: `NG` when the signature fails to
+  verify, `warn` when it verifies but is quarantined, `ok` otherwise.
+  (Verified on a real install: `doctor --fix` cleared quarantine on 2520
+  files and idempotently re-signed 107 Mach-O files with the signature
+  still verifying and the engine unaffected.)
+
 ## [0.4.2] - 2026-07-05
 
 ### Added
