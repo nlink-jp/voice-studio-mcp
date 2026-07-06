@@ -139,8 +139,10 @@ func (s *Supervisor) Start(ctx context.Context) error {
 			code := s.exitCode
 			s.cmd = nil
 			return toolerr.Newf(toolerr.CodeEngineUnavailable,
-				"engine process exited during startup (exit code %d) — see server log for engine output", code).
-				WithDetails(map[string]any{"exit_code": code})
+				"engine process exited during startup (exit code %d) — see the server log for engine output. "+
+					"If macOS killed it for a code-signature reason (common with the unsigned AivisSpeech bundle), "+
+					"run `voice-studio-mcp doctor --fix`", code).
+				WithDetails(map[string]any{"exit_code": code, "hint": "voice-studio-mcp doctor --fix"})
 		default:
 		}
 		if time.Now().After(deadline) {

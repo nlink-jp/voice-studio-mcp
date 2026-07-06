@@ -94,3 +94,22 @@ func TestDoctorMissingFFmpegFails(t *testing.T) {
 		t.Errorf("NG ffmpeg line missing: %s", out.String())
 	}
 }
+
+func TestRunEngineFixRejectsExternalMode(t *testing.T) {
+	cfg := doctorConfig(t)
+	cfg.Engine.Mode = config.EngineModeExternal
+	var out strings.Builder
+	if err := runEngineFix(context.Background(), &out, cfg); err == nil {
+		t.Errorf("--fix must reject external mode")
+	}
+}
+
+func TestRunEngineFixRejectsMissingCommand(t *testing.T) {
+	cfg := doctorConfig(t)
+	cfg.Engine.Mode = config.EngineModeManaged
+	cfg.Engine.Command = filepath.Join(t.TempDir(), "no-such-engine", "run")
+	var out strings.Builder
+	if err := runEngineFix(context.Background(), &out, cfg); err == nil {
+		t.Errorf("--fix must reject a missing engine command")
+	}
+}
