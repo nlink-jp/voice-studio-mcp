@@ -102,8 +102,10 @@ func runDoctorChecks(ctx context.Context, out io.Writer, cfg *config.Config, use
 	return ok
 }
 
-// checkEngineSignature is informational: a spawn-blocking signature state is
-// reported but does not fail doctor, because `doctor --fix` resolves it.
+// checkEngineSignature is informational: a spawn-blocking (or spawn-risking)
+// signature state is reported but does not fail doctor, because `doctor --fix`
+// resolves it. The line reports only the conditions actually detected —
+// quarantine and signature verification are distinct facts.
 func checkEngineSignature(ctx context.Context, out io.Writer, cfg *config.Config, _ *bool) {
 	if runtime.GOOS != "darwin" {
 		return
@@ -114,14 +116,22 @@ func checkEngineSignature(ctx context.Context, out io.Writer, cfg *config.Config
 		fmt.Fprintf(out, "ok engine signature: could not inspect (%v)\n", err)
 		return
 	}
-	if rep.NeedsFix() {
-		reason := "unsigned / mismatched nested signatures"
+	switch {
+	case !rep.SignatureOK:
+		// The real blocker: nested signatures don't verify (unsigned /
+		// mismatched TeamIDs). macOS kills the engine on spawn.
+		detail := "signature does not verify (unsigned or mismatched nested signatures)"
 		if rep.Quarantined {
-			reason = "quarantined + " + reason
+			detail += "; quarantined"
 		}
-		fmt.Fprintf(out, "NG engine signature: %s (%s) — run `voice-studio-mcp doctor --fix` to repair\n", rep.Dir, reason)
-	} else {
-		fmt.Fprintf(out, "ok engine signature: %d Mach-O files, signature verifies\n", rep.MachOFiles)
+		fmt.Fprintf(out, "NG engine signature: %s — %s. Run `voice-studio-mcp doctor --fix` to repair\n", rep.Dir, detail)
+	case rep.Quarantined:
+		// Signature verifies but the download quarantine flag is set; this can
+		// block managed spawn on a machine that never GUI-approved the app.
+		fmt.Fprintf(out, "warn engine signature: %s is quarantined but its signature verifies. "+
+			"If managed spawn is killed, run `voice-studio-mcp doctor --fix` (clears quarantine)\n", rep.Dir)
+	default:
+		fmt.Fprintf(out, "ok engine signature: %d Mach-O files, signature verifies, not quarantined\n", rep.MachOFiles)
 	}
 }
 
