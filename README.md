@@ -84,6 +84,38 @@ sensible defaults.
 | `licenses` | Collect voice-model license declarations for review (`--full <uuid>` full text, `--toml` config skeleton) |
 | `version` | Print the version |
 
+## Troubleshooting: the engine won't start
+
+Run `voice-studio-mcp doctor` first — it reports the engine, ffmpeg, and
+config state read-only, so it will point at the specific problem.
+
+**"The engine exits immediately / macOS won't let it launch / it's killed
+on spawn."** This is the most common report. AivisSpeech ships as an
+**unsigned, un-notarized** bundle whose nested libraries carry mismatched
+code signatures; modern macOS kills it at load time, and removing the
+quarantine flag alone is not enough on some machines. Fix it in one step:
+
+```sh
+voice-studio-mcp doctor        # shows NG/warn engine signature if affected
+voice-studio-mcp doctor --fix  # strips quarantine + ad-hoc re-signs the engine
+```
+
+`--fix` only touches the engine subtree (never the wider app) and is
+idempotent. **Re-run it after every AivisSpeech update** (an update
+restores the quarantine flag). macOS only; see
+[ADR-0012](docs/en/adr/0012-engine-signature-self-repair.md) for why this
+is a local repair rather than a re-signed engine fork.
+
+**"initialize hangs for a long time on first use."** The first model load
+takes minutes. Raise `engine.startup_timeout_seconds`, or launch the
+AivisSpeech GUI once to finish model setup (the server then attaches to it).
+
+**"engine command not found."** AivisSpeech isn't installed, or it's in a
+non-standard location — set `engine.command` in the config.
+
+The full symptom→remedy table is in the
+[setup guide](docs/en/reference/setup.md#7-troubleshooting).
+
 ## Tools
 
 | Tool | Description |

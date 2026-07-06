@@ -83,6 +83,39 @@ MCPクライアント(例: Claude Code)への登録:
 | `licenses` | 音声モデルのライセンス宣言を収集・確認(`--full <uuid>` 全文表示、`--toml` configスケルトン生成) |
 | `version` | バージョン表示 |
 
+## トラブルシューティング: エンジンが起動しない
+
+まず `voice-studio-mcp doctor` を実行してください。エンジン・ffmpeg・
+config の状態を読み取り専用で報告するので、問題箇所を指し示します。
+
+**「エンジンが即座に終了する / macOS が起動させない / spawn 時に kill
+される」** — 最も多い報告です。AivisSpeech は**未署名・未 notarize** の
+バンドルで配布され、内部ライブラリの署名がまだらなため、現代の macOS が
+ロード時に kill します。quarantine を外すだけでは不十分な環境もあります。
+1ステップで直せます:
+
+```sh
+voice-studio-mcp doctor        # 該当時は NG/warn engine signature を表示
+voice-studio-mcp doctor --fix  # quarantine 除去 + エンジンを ad-hoc 再署名
+```
+
+`--fix` はエンジンサブツリーのみ触り(アプリ全体には触れない)、冪等です。
+**AivisSpeech の更新のたびに再実行してください**(更新で quarantine が
+戻るため)。macOS 専用。なぜ再署名エンジンの fork でなくローカル修復に
+したかは [ADR-0012](docs/ja/adr/0012-engine-signature-self-repair.ja.md)
+参照。
+
+**「初回利用時に initialize が長時間止まる」** — 初回モデルロードに数分
+かかります。`engine.startup_timeout_seconds` を延ばすか、AivisSpeech GUI を
+一度起動してモデル準備を済ませてください(以降サーバーが attach します)。
+
+**「engine command not found」** — AivisSpeech 未導入、または非標準パス。
+config の `engine.command` を設定してください。
+
+症状→対処の完全な表は
+[セットアップガイド](docs/ja/reference/setup.ja.md#7-トラブルシューティング)
+にあります。
+
 ## ツール
 
 | ツール | 説明 |
