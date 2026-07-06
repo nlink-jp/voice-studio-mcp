@@ -80,7 +80,7 @@ sensible defaults.
 | Command | Description |
 |---------|-------------|
 | `serve` | Start the MCP stdio server (default when no subcommand is given) |
-| `doctor` | Diagnose the environment (config, engine, ffmpeg, workspace dir) |
+| `doctor` | Diagnose the environment (config, engine, ffmpeg, workspace dir). `--fix` repairs an unsigned AivisSpeech Engine macOS refuses to launch (ADR-0012) |
 | `licenses` | Collect voice-model license declarations for review (`--full <uuid>` full text, `--toml` config skeleton) |
 | `version` | Print the version |
 
@@ -224,7 +224,7 @@ dotfiles.
 - [`docs/en/reference/agent-workflow.md`](docs/en/reference/agent-workflow.md) — the agent workflow guide (hand this to Claude Code / Cowork; sample material in [`samples/`](samples/))
 - [`docs/en/reference/setup.md`](docs/en/reference/setup.md) — setup guide (install → first production → troubleshooting)
 - [`docs/en/reference/architecture.md`](docs/en/reference/architecture.md) — architecture overview and decision index
-- [`docs/en/adr/`](docs/en/adr/) — ten ADRs recording the *why* behind non-obvious designs
+- [`docs/en/adr/`](docs/en/adr/) — twelve ADRs recording the *why* behind non-obvious designs
 - [`docs/en/voice-studio-mcp-rfp.md`](docs/en/voice-studio-mcp-rfp.md) — the original RFP
 - 日本語版: [`docs/ja/`](docs/ja/) (セットアップ / アーキテクチャ / ADR / RFP)
 

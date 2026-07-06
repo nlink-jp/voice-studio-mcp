@@ -79,7 +79,7 @@ MCPクライアント(例: Claude Code)への登録:
 | コマンド | 説明 |
 |---------|------|
 | `serve` | MCP stdioサーバーを起動(サブコマンド省略時の既定) |
-| `doctor` | 環境診断(config・エンジン・ffmpeg・workspaceディレクトリ) |
+| `doctor` | 環境診断(config・エンジン・ffmpeg・workspaceディレクトリ)。`--fix` で未署名の AivisSpeech Engine の起動失敗を修復(ADR-0012) |
 | `licenses` | 音声モデルのライセンス宣言を収集・確認(`--full <uuid>` 全文表示、`--toml` configスケルトン生成) |
 | `version` | バージョン表示 |
 
@@ -223,7 +223,7 @@ VOICE_STUDIO_TEST_REAL_ENGINE=1 make test-e2e   # opt-in: 実エンジン
 - [`docs/ja/reference/agent-workflow.ja.md`](docs/ja/reference/agent-workflow.ja.md) — エージェント向けワークフロー手順書(Claude Code / Cowork にそのまま渡す。サンプル素材は [`samples/`](samples/))
 - [`docs/ja/reference/setup.ja.md`](docs/ja/reference/setup.ja.md) — セットアップガイド(導入→最初の制作→トラブルシューティング)
 - [`docs/ja/reference/architecture.ja.md`](docs/ja/reference/architecture.ja.md) — アーキテクチャ概観と設計判断の索引
-- [`docs/ja/adr/`](docs/ja/adr/) — 非自明な設計の「なぜ」を記録した ADR 10本
+- [`docs/ja/adr/`](docs/ja/adr/) — 非自明な設計の「なぜ」を記録した ADR 12本
 - [`docs/ja/voice-studio-mcp-rfp.ja.md`](docs/ja/voice-studio-mcp-rfp.ja.md) — RFP
 - English: [`docs/en/`](docs/en/)(setup / architecture / ADR / RFP)
 

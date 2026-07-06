@@ -152,6 +152,7 @@ test seam.
 | [0009](../adr/0009-bundle-skill-with-mcp.md) | radio-drama skill bundled in this repo (contracts evolve in one commit + coherence test) |
 | [0010](../adr/0010-agent-prepared-workspaces.md) | Work in the agent-prepared workspace_root + os.Root kernel containment + get_usage |
 | [0011](../adr/0011-consolidate-skill-into-multi-actor-narration.md) | Skill consolidated into multi-actor-narration (5 formats incl. generalized audio-drama); shipped as a separate .skill release asset |
+| [0012](../adr/0012-engine-signature-self-repair.md) | Fix the unsigned-engine launch failure with local self-repair (doctor --fix), not a fork/notarize |
 
 ## 8. Out of scope (deliberately, in v1)
 

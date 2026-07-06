@@ -146,6 +146,7 @@ dist/voice-studio-mcp licenses --toml                # generate config skeletons
 |---------|--------|
 | initialize times out | First model load in progress. Raise `engine.startup_timeout_seconds`; launch the GUI once to finish model setup |
 | `engine_unavailable: engine command not found` | AivisSpeech not installed, or non-standard path → set `engine.command` |
+| engine exits immediately on spawn / macOS "cannot be opened" / killed for a code-signature reason | The AivisSpeech bundle is unsigned with mismatched nested signatures. Run `voice-studio-mcp doctor --fix` (strips quarantine + ad-hoc re-signs the engine subtree, ADR-0012). Re-run after each AivisSpeech update. `doctor` (no flag) reports whether the fix is needed |
 | `ffmpeg_not_found` | `brew install ffmpeg`, or set an absolute `master.ffmpeg_path` |
 | `job_not_found` | Jobs die with the server. Re-run `synthesize_script` (the cache makes it differential) |
 | `master_incomplete` | Synthesize the `missing_line_ids` from details, then retry |

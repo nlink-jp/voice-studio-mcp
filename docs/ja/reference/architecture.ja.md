@@ -149,6 +149,7 @@ enqueue 前バリデーションを同期で完走させるのが要点: エー�
 | [0009](../adr/0009-bundle-skill-with-mcp.ja.md) | radio-drama スキルは本リポジトリに同梱(契約の同一コミット進化+整合テスト) |
 | [0010](../adr/0010-agent-prepared-workspaces.ja.md) | エージェントが用意した workspace_root で仕事をする+os.Root カーネル封じ込め+get_usage |
 | [0011](../adr/0011-consolidate-skill-into-multi-actor-narration.ja.md) | スキルを multi-actor-narration に一本化(汎用化 audio-drama 含む5フォーマット)、別 .skill リリースアセットで配布 |
+| [0012](../adr/0012-engine-signature-self-repair.ja.md) | 未署名エンジンの起動失敗は doctor --fix のローカル自己修復で解く(fork/notarize せず) |
 
 ## 8. スコープ外(v1 で意図的にやらないこと)
 

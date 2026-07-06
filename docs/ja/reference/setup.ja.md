@@ -145,6 +145,7 @@ dist/voice-studio-mcp licenses --toml                # config スケルトン生
 |------|------|
 | initialize がタイムアウト | 初回モデルロード中。`engine.startup_timeout_seconds` を延ばす。GUI を一度起動してモデル取得を済ませる |
 | `engine_unavailable: engine command not found` | AivisSpeech 未導入、または非標準パス → `engine.command` を設定 |
+| spawn 直後にエンジンが終了 / macOS が「開けません」 / コード署名で kill される | AivisSpeech バンドルが未署名でネスト署名がまだら。`voice-studio-mcp doctor --fix` を実行(quarantine 除去+エンジンサブツリーを ad-hoc 再署名、ADR-0012)。AivisSpeech 更新のたびに再実行。素の `doctor` が要否を報告 |
 | `ffmpeg_not_found` | `brew install ffmpeg` または `master.ffmpeg_path` に絶対パス |
 | `job_not_found` | サーバー再起動でジョブは消える。`synthesize_script` を再実行(キャッシュで差分のみ合成) |
 | `master_incomplete` | details の missing_line_ids を `synthesize_script` で合成してから再実行 |

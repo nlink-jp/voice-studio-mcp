@@ -114,6 +114,11 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
   `dist/multi-actor-narration.skill`, shipped as a separate release asset;
   the coherence test aggregates the multi-file skill (SKILL.md + `_shared/`
   + `<format>/FORMAT.md`). Breaking: `/radio-drama` → `/multi-actor-narration`
+- **ADR-0012**: unsigned AivisSpeech bundle (mismatched nested signatures)
+  is killed by macOS on spawn; `doctor --fix` strips quarantine + ad-hoc
+  re-signs the engine subtree inside-out (`internal/enginefix`, Runner-faked
+  tests). Bare `doctor` detects read-only; `--fix` mutates. NOT a
+  fork/notarize/reimplement — self-repair on the user's machine
 
 Full texts: [`docs/en/adr/`](docs/en/adr/) / [`docs/ja/adr/`](docs/ja/adr/).
 
