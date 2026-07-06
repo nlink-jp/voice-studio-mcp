@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2026-07-05
+
+### Added
+
+- `doctor --fix` repairs a managed AivisSpeech Engine that macOS refuses to
+  launch (ADR-0012). The engine ships as an unsigned/un-notarized PyInstaller
+  bundle whose nested libraries carry mismatched TeamID signatures; modern
+  macOS kills it at load time, and stripping quarantine alone is not enough on
+  some machines. `--fix` strips quarantine and ad-hoc re-signs every Mach-O in
+  the engine subtree inside-out so signatures are uniform — automating the
+  proven manual fix. Bare `doctor` detects and reports the condition read-only;
+  `--fix` mutates the install (re-run after each AivisSpeech update). Chosen
+  over forking/notarizing or reimplementing the engine (see ADR-0012).
+- The engine supervisor's spawn-early-exit error now points at `doctor --fix`.
+
 ## [0.4.1] - 2026-07-05
 
 ### Changed
