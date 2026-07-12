@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] - 2026-07-12
+
+### Changed
+
+- **`LICENSE` is now bundled** in the release archive alongside `README.md`,
+  per `nlink-jp/.github` CONVENTIONS.md §Release Archive Standard. The archive
+  name (`voice-studio-mcp-vX.Y.Z-darwin-arm64.zip`) and canonical in-archive
+  binary name were already compliant. v1 targets macOS Apple Silicon only, so
+  it already shipped **darwin/arm64 only** (no Intel / universal / Linux /
+  Windows) — unchanged.
+- **darwin code-signature identifier** is now explicitly pinned to the
+  canonical `voice-studio-mcp` via `codesign -i`.
+- **Dropped the `-s -w` linker strip flags** from `LDFLAGS`, aligning with the
+  org-standard build flags (darwin-only, so purely a consistency change).
+
+No change to the binary's behaviour — a packaging / build-config release.
+
 ## [0.4.3] - 2026-07-05
 
 ### Fixed
