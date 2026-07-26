@@ -81,7 +81,7 @@ MCPクライアント(例: Claude Code)への登録:
 | `serve` | MCP stdioサーバーを起動(サブコマンド省略時の既定) |
 | `doctor` | 環境診断(config・エンジン・ffmpeg・workspaceディレクトリ)。`--fix` で未署名の AivisSpeech Engine の起動失敗を修復(ADR-0012) |
 | `licenses` | 音声モデルのライセンス宣言を収集・確認(`--full <uuid>` 全文表示、`--toml` configスケルトン生成) |
-| `version` | バージョン表示 |
+| `version` | バージョン表示（`--version` も同一の文字列を出力） |
 
 ## トラブルシューティング: エンジンが起動しない
 

@@ -82,7 +82,7 @@ sensible defaults.
 | `serve` | Start the MCP stdio server (default when no subcommand is given) |
 | `doctor` | Diagnose the environment (config, engine, ffmpeg, workspace dir). `--fix` repairs an unsigned AivisSpeech Engine macOS refuses to launch (ADR-0012) |
 | `licenses` | Collect voice-model license declarations for review (`--full <uuid>` full text, `--toml` config skeleton) |
-| `version` | Print the version |
+| `version` | Print the version (`--version` prints the same string) |
 
 ## Troubleshooting: the engine won't start
 

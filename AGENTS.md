@@ -32,7 +32,8 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
 
 ## Structure
 
-- `cmd/` — cobra commands: `serve` (default), `doctor`, `version`;
+- `cmd/` — cobra commands: `serve` (default), `doctor`, `version` (also
+  reachable as the `--version` flag, which the org homebrew formula tests);
   `tools_registry.go` wires Deps after the engine is up
 - `internal/jsonrpc/`, `internal/transport/`, `internal/mcpserver/`,
   `internal/toolerr/`, `internal/logging/` — MCP skeleton (ported verbatim
