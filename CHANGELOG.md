@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.5] - 2026-07-26
 
 ### Fixed
 
@@ -202,6 +202,7 @@ No change to the binary's behaviour — a packaging / build-config release.
   (audiobook range) after listening feedback; configurable via
   `master.loudnorm_i`.
 
+[0.4.5]: https://github.com/nlink-jp/voice-studio-mcp/releases/tag/v0.4.5
 [0.3.0]: https://github.com/nlink-jp/voice-studio-mcp/releases/tag/v0.3.0
 [0.2.0]: https://github.com/nlink-jp/voice-studio-mcp/releases/tag/v0.2.0
 [0.1.0]: https://github.com/nlink-jp/voice-studio-mcp/releases/tag/v0.1.0
