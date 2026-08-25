@@ -24,6 +24,7 @@ make test-e2e   # build + drive the binary over stdio against an
                 # in-process mock engine + ffmpeg stub
 VOICE_STUDIO_TEST_REAL_ENGINE=1 make test-e2e  # opt-in real-engine e2e
 make package    # build-all + zip + notarize darwin (NOTARY_PROFILE)
+make verify-release  # gate: .notarized marker + freshness (run before upload)
 make package-skill  # bundle skills/ → dist/multi-actor-narration.skill (release asset)
 ```
 
