@@ -26,7 +26,7 @@ func registerSynthesizeScript(srv *mcpserver.Server, d *Deps) {
   "required": ["workspace_id", "script_path"],
   "properties": {
     "workspace_id": {"type": "string"},
-    "workspace_root": {"type": "string", "description": "Absolute path to an agent-prepared workspace root directory (create it first with your own file tools); omit to use the server-configured default (~/.voice-studio)"},
+    "workspace_root": {"type": "string", "description": "Absolute path to a workspace root you prepared and can read back. Pass your own session or working directory when you have one: results come back as paths, so a workspace you cannot open leaves you holding a path to nothing. Omitting it uses the server default (~/.voice-studio), which is only useful if that is readable to you."},
     "script_path": {"type": "string", "description": "Script JSONL path relative to the workspace root (e.g. script/episode1.jsonl)"},
     "casting_path": {"type": "string", "description": "Casting table path relative to the workspace root (default casting.toml)"},
     "force": {"type": "boolean", "description": "Ignore the cache and re-synthesize every line"}

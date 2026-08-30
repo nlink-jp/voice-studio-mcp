@@ -24,7 +24,9 @@ master/          final audio + credits (server-written)
 - `workspace_root` (optional on every workspace tool): an **absolute path to
   a directory you prepared** — create it with your own file tools wherever
   you are allowed to write (e.g. inside the project directory), then pass
-  the same value on every call. Omit it to use the server's default root
+  the same value on every call. **Pass a root you can read back**: every
+  result is a path under it, so a workspace you cannot open leaves you
+  holding a path to nothing. Omit it to use the server's default root
   (`~/.voice-studio`), which requires the server and you to share an
   unrestricted filesystem view.
 - The server never reads or writes outside the workspace (kernel-enforced;
