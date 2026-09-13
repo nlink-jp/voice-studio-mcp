@@ -8,6 +8,12 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **The bundled `multi-actor-narration` skill still taught `workspace_root`.**
+  It is installed into the agent's own skill directory and read as instruction,
+  so a stale argument there is not a documentation wart — it told the agent to
+  make a call 0.5.0 refuses, described the argument as optional, and named
+  `~/.voice-studio` as the fallback. All eight files now teach `work_dir` as
+  required with no default.
 - **The initialize `instructions` field never mentioned `work_dir`.** It is the
   first thing the model reads about this server — before any tool list — and it
   still described "a workspace directory you prepare" while every tool required
@@ -18,6 +24,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - `TestInstructionsNameTheWorkDirContract` — the schema and description tests
   walked `tools/list`; nothing walked what `initialize` returns (ADR-0013).
+- `TestSkillNamesNoRetiredArgument` / `TestSkillTeachesWorkDirAsRequired` —
+  every existing skill test checked that something is present; none checked
+  that a retired thing is absent, which is how the skill drifted.
 
 ## [0.5.1] - 2026-09-13
 

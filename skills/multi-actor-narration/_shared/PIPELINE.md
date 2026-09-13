@@ -9,21 +9,23 @@
 
 ### ワークスペース
 
-制作状態はすべて `<workspace_root>/<workspace_id>/` に置かれる。台本 JSONL は
+制作状態はすべて `<work_dir>/<workspace_id>/` に置かれる。台本 JSONL は
 `<workspace>/script/`、キャストは `<workspace>/casting.toml`、音声は
 `<workspace>/wav/<id>.wav`、成果物は `<workspace>/master/` に出る。
 
 - `workspace_id`: 作品（回・エピソード）ごとに1つ。`[a-zA-Z0-9_-]{1,64}`。
-- `workspace_root`（各ワークスペース系ツールで**任意**）: **自分が書き込める
-  絶対パスのディレクトリ**を自前のファイルツールで先に作り、以降**すべての
-  呼び出しで同じ値を渡す**。省略するとサーバ既定の `~/.voice-studio` を使う
-  （サーバと自分が無制限のファイルビューを共有している場合のみ機能する）。
+- `work_dir`（各ワークスペース系ツールで**必須**）: **自分が読み書きできる
+  絶対パスのディレクトリ**（セッションの作業ディレクトリなど）を自前のファイル
+  ツールで先に作り、以降**すべての呼び出しで同じ値を渡す**。サーバ既定は
+  **存在しない** — サーバが選んだディレクトリは呼び出し側が開けるとは限らず、
+  返ってきたパスが役に立たなくなるため。省略した呼び出しは `work_dir_required`
+  で拒否される。
 - サーバはワークスペース外を読み書きしない（カーネルで強制。ワークスペース内
   から外を指すシンボリックリンクは `path_not_allowed` で拒否される）。
 
-> Cowork など、サーバと共有するファイルビューが限定される環境では、**プロジェクト
-> 配下（例: ユーザが選択したフォルダ）に `workspace_root` を作って毎回渡す**こと。
-> 既定の `~/.voice-studio` に依存しないため、環境をまたいでも動く。
+> `work_dir` は「自分が読み戻せる場所」であればよい。ファイルビューが限定される
+> 環境（Cowork など）では、**プロジェクト配下やユーザが選択したフォルダ**を渡せば
+> そのまま動く。
 
 ---
 
@@ -35,11 +37,11 @@ AivisSpeech エンジンの起動方法をユーザに案内する。各話者�
 [VOICE-CATALOG.md](./VOICE-CATALOG.md) を参照。
 
 あわせて `workspace_id` を決め（作品ごとに1つ、`[a-zA-Z0-9_-]{1,64}`）、
-**書き込める絶対パスの `workspace_root` ディレクトリを自前で作成**する
+**書き込める絶対パスの `work_dir` ディレクトリを自前で作成**する
 （プロジェクト配下やユーザ選択フォルダを推奨）。以降 `synthesize_script` /
 `synthesize_line` / `register_dictionary` / `master` などすべての呼び出しで
-`workspace_root` と `workspace_id` を同じ値で渡す。既定 `~/.voice-studio` に
-頼れるのはサーバと無制限のファイルビューを共有している場合のみ。
+`work_dir` と `workspace_id` を同じ値で渡す — `work_dir` は必須で、サーバ既定は
+存在しない。
 
 ## P1. 資料の取り込みと構成
 
@@ -60,7 +62,7 @@ AivisSpeech エンジンの起動方法をユーザに案内する。各話者�
   ユーザ確認後にのみ true にする。
 
 承認後 `casting.toml` を `<workspace>/casting.toml` に書く（各 FORMAT.md の
-`casting.template.toml` を雛形に）。ファイルは自前のツールで `workspace_root`
+`casting.template.toml` を雛形に）。ファイルは自前のツールで `work_dir`
 配下に直接書き込む。
 
 ## P3. 発音辞書
@@ -119,7 +121,7 @@ master のパスと尺、`credits_path` の内容（**配布物に必ず同梱**
 | `job_not_found` | サーバ再起動。synthesize_script を再実行（キャッシュ差分） |
 | `master_incomplete` | details.missing_line_ids を先に合成 |
 | `ffmpeg_not_found` | `brew install ffmpeg` |
-| `path_not_allowed` | ワークスペース相対パス、または有効な `workspace_root`（絶対パス）を渡す。外を指すシンボリックリンクは不可 |
+| `path_not_allowed` | ワークスペース相対パス、または有効な `work_dir`（絶対パス）を渡す。外を指すシンボリックリンクは不可 |
 | `invalid_workspace_id` | `[a-zA-Z0-9_-]{1,64}` に合わせる |
 
 ## 禁止事項

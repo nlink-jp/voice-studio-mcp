@@ -4,7 +4,7 @@
 見出しで全体像 → 各項目を手短に。忙しい聞き手が短時間で要点を掴める構成。
 毎朝の定期配信に最適。
 
-入力: **$ARGUMENTS**（資料パス or トピック、任意の workspace_root / workspace_id。無ければ聞く）。
+入力: **$ARGUMENTS**（資料パス or トピック、work_dir（必須）と workspace_id。無ければ聞く）。
 
 共通メカニクスは `../_shared/` を参照:
 [PIPELINE](../_shared/PIPELINE.md) /

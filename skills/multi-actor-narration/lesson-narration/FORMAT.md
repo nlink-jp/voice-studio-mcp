@@ -4,7 +4,7 @@
 講師が段階的に解説し、生徒役が学習者のつまずきを代弁して質問する。
 学び直し・研修・オンボーディング教材に向く。
 
-入力: **$ARGUMENTS**（資料パス or テーマ、任意の workspace_root / workspace_id。無ければ聞く）。
+入力: **$ARGUMENTS**（資料パス or テーマ、work_dir（必須）と workspace_id。無ければ聞く）。
 
 共通メカニクスは `../_shared/` を参照:
 [PIPELINE](../_shared/PIPELINE.md) /

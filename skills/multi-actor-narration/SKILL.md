@@ -15,10 +15,10 @@ argument-hint: "[資料/テーマ/原稿パス] [フォーマット任意] [work
 （audio-drama のみ資料取り込みではなく物語解析を用いる）。
 
 入力: **$ARGUMENTS**（資料パス / テーマ / 原稿パス、任意でフォーマット指定・
-`workspace_root`・`workspace_id`。不明なものは聞く）。制作状態は
-`<workspace_root>/<workspace_id>/` に置かれる。**書き込める絶対パスの
-`workspace_root` を用意し、以降すべての voice-studio 呼び出しで同じ値を渡す**
-（省略時はサーバ既定 `~/.voice-studio`）。詳細は
+`work_dir`・`workspace_id`。不明なものは聞く）。制作状態は
+`<work_dir>/<workspace_id>/` に置かれる。**書き込める絶対パスの
+`work_dir` を用意し、以降すべての voice-studio 呼び出しで同じ値を渡す**
+（`work_dir` は必須で、サーバ既定は存在しない）。詳細は
 [_shared/PIPELINE.md](./_shared/PIPELINE.md) のワークスペース節と P0。
 
 ## ステップ0: フォーマットを選ぶ（最初に必ず）
@@ -71,7 +71,7 @@ audio-drama は**小説・物語・脚本の原稿**（テキスト / Markdown�
 
 ## 共通の制作フロー（要約）
 
-1. `list_speakers` で環境と話者を確認し、`workspace_root`/`workspace_id` を用意
+1. `list_speakers` で環境と話者を確認し、`work_dir`/`workspace_id` を用意
 2. 入力資料を読み、**要点カード**へ抽出（SOURCE-INGEST）
 3. フォーマット固有の**番組構成**に並べ替え（各 `FORMAT.md`）
 4. **キャスティング承認**（人間チェックポイント）→ `casting.toml`

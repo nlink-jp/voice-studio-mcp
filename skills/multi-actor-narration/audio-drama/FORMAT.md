@@ -5,7 +5,7 @@
 フォーマット（資料→解説音声）と違い、入力は**フィクションの原稿そのもの**で、
 要点抽出ではなく**物語解析**（シーン分割・話者帰属・演出）を行う。
 
-入力: **$ARGUMENTS**（原稿パス、任意の workspace_root / workspace_id。無ければ聞く）。
+入力: **$ARGUMENTS**（原稿パス、work_dir（必須）と workspace_id。無ければ聞く）。
 
 合成〜納品の共通メカニクス・台本スキーマ・話者一覧は `../_shared/` を参照:
 [PIPELINE](../_shared/PIPELINE.md) /
@@ -29,7 +29,7 @@
 ### 1. 環境チェック
 [PIPELINE P0](../_shared/PIPELINE.md#p0-環境チェックとワークスペース準備最初に必ず)。
 `list_speakers` を呼び、話者の styles と `license.status` を控える。
-`workspace_id` を決め、書き込める絶対パスの `workspace_root` を用意する。
+`workspace_id` を決め、書き込める絶対パスの `work_dir` を用意する（必須）。
 
 ### 2. 原稿を読み、物語解析（このフォーマットの核）
 

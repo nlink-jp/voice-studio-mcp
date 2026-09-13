@@ -4,7 +4,7 @@
 1 つの論点を賛成・懐疑・別視点から掘り下げ、聞き手が自分で判断できるよう
 バランスよく整理する。深掘りや意思決定支援に向く。
 
-入力: **$ARGUMENTS**（資料パス or テーマ、任意の workspace_root / workspace_id。無ければ聞く）。
+入力: **$ARGUMENTS**（資料パス or テーマ、work_dir（必須）と workspace_id。無ければ聞く）。
 
 共通メカニクスは `../_shared/` を参照:
 [PIPELINE](../_shared/PIPELINE.md) /

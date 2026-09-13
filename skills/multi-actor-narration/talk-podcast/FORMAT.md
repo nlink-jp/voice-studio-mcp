@@ -4,7 +4,7 @@
 ホストが聞き手を代弁して問いかけ、ゲストが噛み砕いて答える NotebookLM 風の
 フォーマット。堅い資料を「ラジオで聴ける会話」に変える。
 
-入力: **$ARGUMENTS**（資料パス or テーマ、任意の workspace_root / workspace_id。無ければ聞く）。
+入力: **$ARGUMENTS**（資料パス or テーマ、work_dir（必須）と workspace_id。無ければ聞く）。
 
 合成〜納品の共通メカニクス、台本スキーマ、資料取り込み、話者一覧は
 `../_shared/` を参照:

@@ -139,3 +139,34 @@ func TestExactlyOneSkillManifest(t *testing.T) {
 		t.Errorf("want exactly 1 frontmatter SKILL.md, got %d: %v", len(manifests), manifests)
 	}
 }
+
+// The skill is installed into the agent's own skill directory and read as
+// instruction, so a stale argument name in it is not a documentation wart —
+// it is the agent being told to make a call the server refuses. v0.5.0 made
+// work_dir required and the skill went on teaching `workspace_root`
+// (described as optional, with the ~/.voice-studio default as the fallback)
+// across eight files, because every existing test here checks for the
+// presence of something and none checks for the absence of a retired thing.
+func TestSkillNamesNoRetiredArgument(t *testing.T) {
+	s := readSkillCorpus(t)
+	for _, retired := range []string{"workspace_root", "workspaceRoot", "workspace_dir", "~/.voice-studio"} {
+		if strings.Contains(s, retired) {
+			t.Errorf("the skill still teaches %q; the argument is work_dir and it is "+
+				"required, with no server-owned default (ADR-0013)", retired)
+		}
+	}
+}
+
+// Naming work_dir is not enough: an agent told it is optional will omit it.
+func TestSkillTeachesWorkDirAsRequired(t *testing.T) {
+	s := readSkillCorpus(t)
+	if !strings.Contains(s, "work_dir") {
+		t.Fatal("the skill never mentions work_dir, which every workspace tool requires")
+	}
+	if !strings.Contains(s, "work_dir_required") {
+		t.Error("the skill does not name the error a missing work_dir produces")
+	}
+	if !strings.Contains(s, "必須") {
+		t.Error("the skill does not say work_dir is required")
+	}
+}
