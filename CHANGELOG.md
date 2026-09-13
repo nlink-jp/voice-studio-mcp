@@ -18,6 +18,12 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   and ran `synthesize_script` without a `work_dir` — which 0.5.0 refuses. They
   use a caller-prepared directory throughout.
 
+### Added
+
+- A contract test walking every registered tool: no retired name in a schema or
+  a description, and `work_dir` required wherever it is declared. ADR-0013
+  asked for this test and the release shipped without it.
+
 ## [0.5.0] - 2026-09-13
 
 ### Changed
