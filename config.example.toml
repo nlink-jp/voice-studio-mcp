@@ -7,9 +7,6 @@
 log_level = "info"        # debug | info | warn | error
 log_file = ""             # empty = stderr only; logs NEVER go to stdout (MCP transport)
 
-[workspace]
-workspace_dir = "~/.voice-studio"   # one sub-directory per work (novel / episode)
-
 [engine]
 # "managed": spawn the AivisSpeech Engine as a child process and reap it on
 #            shutdown (attaches instead if something already answers at url).

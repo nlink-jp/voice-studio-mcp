@@ -32,18 +32,12 @@ func TestDefaultValues(t *testing.T) {
 	if c.Master.LoudnormI != -18.0 {
 		t.Errorf("default loudnorm target: %v", c.Master.LoudnormI)
 	}
-	if !strings.HasSuffix(c.Workspace.Dir, ".voice-studio") {
-		t.Errorf("default workspace dir: %q", c.Workspace.Dir)
-	}
 }
 
 func TestLoadFullFile(t *testing.T) {
 	path := writeConfig(t, `
 [server]
 log_level = "debug"
-
-[workspace]
-workspace_dir = "~/somewhere"
 
 [engine]
 mode = "external"
@@ -90,11 +84,6 @@ license = "CC BY-SA 4.0"
 	}
 	if c.Synthesis.DefaultIntensity != 1.0 {
 		t.Errorf("intensity default lost: %v", c.Synthesis.DefaultIntensity)
-	}
-	// ~ expanded.
-	home, _ := os.UserHomeDir()
-	if c.Workspace.Dir != filepath.Join(home, "somewhere") {
-		t.Errorf("workspace dir not expanded: %q", c.Workspace.Dir)
 	}
 	// speaker_metadata array parsed and joinable.
 	if len(c.SpeakerMetadata) != 2 {
@@ -173,4 +162,24 @@ func writeConfig(t *testing.T, body string) string {
 		t.Fatal(err)
 	}
 	return path
+}
+
+// A key this server removed must be answered by name: the operator set it
+// deliberately, and "unknown config keys" reads like a typo. ADR-0013 removed
+// the default root, but the key kept decoding into a field nothing used, so a
+// config carrying it loaded and quietly meant nothing.
+func TestRemovedWorkspaceDirIsRejectedByName(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.toml")
+	if err := os.WriteFile(path, []byte("[workspace]\nworkspace_dir = \"~/.voice-studio\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := config.Load(path)
+	if err == nil {
+		t.Fatal("a config carrying workspace_dir must fail to load")
+	}
+	for _, want := range []string{"workspace_dir", "work_dir", "ADR-0013"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q does not mention %q", err, want)
+		}
+	}
 }

@@ -37,7 +37,6 @@ func newHarness(t *testing.T) *testHarness {
 
 	cfg := config.Default()
 	root := t.TempDir()
-	cfg.Workspace.Dir = root
 	client := engine.NewClient(mock.URL(), 5*time.Second)
 	deps := &Deps{
 		Cfg:    cfg,

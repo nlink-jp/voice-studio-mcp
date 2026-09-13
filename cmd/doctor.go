@@ -92,12 +92,6 @@ func runDoctorChecks(ctx context.Context, out io.Writer, cfg *config.Config, use
 	}
 
 	// Workspace root must be creatable/writable.
-	if err := os.MkdirAll(cfg.Workspace.Dir, 0o755); err != nil {
-		fmt.Fprintf(out, "NG workspace dir: %v\n", err)
-		ok = false
-	} else {
-		fmt.Fprintf(out, "ok workspace dir: %s\n", cfg.Workspace.Dir)
-	}
 
 	return ok
 }

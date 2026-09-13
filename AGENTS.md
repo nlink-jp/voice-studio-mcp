@@ -41,7 +41,7 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
   from data-toolbox-mcp)
 - `internal/config/` — sectioned TOML, strict decode (unknown keys fail),
   `[[speaker_metadata]]` = hand-maintained model license registry
-- `internal/workspace/` — one work = one workspace under `~/.voice-studio`;
+- `internal/workspace/` — one work = one workspace under the caller's `work_dir`;
   `ResolveInside` blocks path traversal
 - `internal/engine/` — `client.go` (HTTP: /version /speakers /audio_query
   /synthesis /user_dict_word), `supervisor.go` (managed spawn + attach

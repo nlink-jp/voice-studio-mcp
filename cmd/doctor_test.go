@@ -13,7 +13,6 @@ import (
 func doctorConfig(t *testing.T) *config.Config {
 	t.Helper()
 	cfg := config.Default()
-	cfg.Workspace.Dir = t.TempDir()
 	cfg.Master.FFmpegPath = "/bin/ls" // stands in for an existing executable
 	return cfg
 }

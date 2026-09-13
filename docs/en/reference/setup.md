@@ -32,7 +32,6 @@ ok config: built-in defaults (no config.toml found)   ← works without config
 ok engine command: /Applications/AivisSpeech.app/...  ← AivisSpeech detected
 ok engine: not running at http://127.0.0.1:10101 (serve will spawn it)
 ok ffmpeg: ffmpeg
-ok workspace dir: /Users/you/.voice-studio
 ```
 
 Any `NG` line includes its remedy (AivisSpeech missing, ffmpeg missing, …).
@@ -91,8 +90,11 @@ understand the moving parts, though.
 
 ```sh
 # 1. Prepare the workspace inputs
-mkdir -p ~/.voice-studio/demo/script
-cat > ~/.voice-studio/demo/casting.toml <<'EOF'
+#    work_dir is any absolute path you can read and write; the server has no
+#    default. This walkthrough uses ~/voice-work.
+export WORK_DIR=~/voice-work
+mkdir -p "$WORK_DIR/demo/script"
+cat > "$WORK_DIR/demo/casting.toml" <<'EOF'
 [characters."Narrator"]
 speaker_uuid = "<from list_speakers>"
 style_id = 888753760
@@ -100,7 +102,7 @@ credit = "AivisSpeech:Anneli"
 license_checked = true
 EOF
 
-cat > ~/.voice-studio/demo/script/demo.jsonl <<'EOF'
+cat > "$WORK_DIR/demo/script/demo.jsonl" <<'EOF'
 {"id":1,"speaker":"Narrator","text":"これは最初のテストです。","pause_after_ms":500}
 {"id":2,"speaker":"Narrator","text":"うまく聞こえていますか。"}
 EOF
@@ -110,10 +112,10 @@ From the MCP client (or as instructions to the agent):
 
 1. `list_speakers` — copy speaker_uuid / style_id into casting.toml
 2. `register_dictionary` — register readings for proper nouns, if any
-3. `synthesize_script` `{workspace_id: "demo", script_path: "script/demo.jsonl"}`
+3. `synthesize_script` `{work_dir: "<the absolute path of $WORK_DIR>", workspace_id: "demo", script_path: "script/demo.jsonl"}`
 4. `check_job` — poll until state is done
-5. `master` `{workspace_id: "demo", script_path: "script/demo.jsonl", format: "mp3"}`
-6. Play `~/.voice-studio/demo/master/demo.mp3`
+5. `master` `{work_dir: "<the same absolute path>", workspace_id: "demo", script_path: "script/demo.jsonl", format: "mp3"}`
+6. Play `$WORK_DIR/demo/master/demo.mp3`
 
 ## 6. Adding voice models and recording their terms
 

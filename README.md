@@ -208,10 +208,11 @@ path of a directory the agent prepared in its own writable area (e.g.
 inside the project directory). This is how sandboxed MCP clients whose
 writes are restricted to the project tree use the server; the server never
 follows symlinks out of a workspace (kernel-enforced via os.Root,
-ADR-0010). Omitted, the default root applies:
+ADR-0010). It is required and has no default — a directory the server picked
+is one you may not be able to open:
 
 ```
-~/.voice-studio/<workspace_id>/
+<work_dir>/<workspace_id>/
 ├── script/          script JSONL files (agent-authored)
 ├── casting.toml     character → voice mapping
 ├── dict/words.json  registered dictionary record

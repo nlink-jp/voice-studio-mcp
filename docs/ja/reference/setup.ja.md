@@ -32,7 +32,6 @@ ok config: built-in defaults (no config.toml found)   ← config なしでも動
 ok engine command: /Applications/AivisSpeech.app/...  ← AivisSpeech 検出
 ok engine: not running at http://127.0.0.1:10101 (serve will spawn it)
 ok ffmpeg: ffmpeg
-ok workspace dir: /Users/you/.voice-studio
 ```
 
 `NG` が出た行のメッセージに対処方法が書かれている(AivisSpeech 未導入、
@@ -92,8 +91,11 @@ claude mcp add voice-studio -- /path/to/dist/voice-studio-mcp serve
 
 ```sh
 # 1. ワークスペースの入力を用意
-mkdir -p ~/.voice-studio/demo/script
-cat > ~/.voice-studio/demo/casting.toml <<'EOF'
+#    work_dir は「あなたが読み書きできる絶対パス」なら何でもよい。
+#    ここでは ~/voice-work を使う(サーバー既定は存在しない)。
+export WORK_DIR=~/voice-work
+mkdir -p "$WORK_DIR/demo/script"
+cat > "$WORK_DIR/demo/casting.toml" <<'EOF'
 [characters."ナレーター"]
 speaker_uuid = "<list_speakers で取得>"
 style_id = 888753760
@@ -101,7 +103,7 @@ credit = "AivisSpeech:Anneli"
 license_checked = true
 EOF
 
-cat > ~/.voice-studio/demo/script/demo.jsonl <<'EOF'
+cat > "$WORK_DIR/demo/script/demo.jsonl" <<'EOF'
 {"id":1,"speaker":"ナレーター","text":"これは最初のテストです。","pause_after_ms":500}
 {"id":2,"speaker":"ナレーター","text":"うまく聞こえていますか。"}
 EOF
@@ -111,10 +113,10 @@ MCP クライアントから(またはエージェントへの指示として):
 
 1. `list_speakers` — speaker_uuid / style_id を確認して casting.toml に反映
 2. `register_dictionary` — 固有名詞があれば読みを登録
-3. `synthesize_script` `{workspace_id: "demo", script_path: "script/demo.jsonl"}`
+3. `synthesize_script` `{work_dir: "<$WORK_DIR の絶対パス>", workspace_id: "demo", script_path: "script/demo.jsonl"}`
 4. `check_job` — state が done になるまでポーリング
-5. `master` `{workspace_id: "demo", script_path: "script/demo.jsonl", format: "mp3"}`
-6. `~/.voice-studio/demo/master/demo.mp3` を再生
+5. `master` `{work_dir: "<同じ絶対パス>", workspace_id: "demo", script_path: "script/demo.jsonl", format: "mp3"}`
+6. `$WORK_DIR/demo/master/demo.mp3` を再生
 
 ## 6. 音声モデルの追加と規約記録
 
@@ -156,7 +158,7 @@ dist/voice-studio-mcp licenses --toml                # config スケルトン生
 ## 8. アンインストール
 
 ```sh
-rm -rf ~/.voice-studio          # 全ワークスペース(音声・キャッシュ)
+rm -rf <あなたの work_dir>      # 全ワークスペース(音声・キャッシュ)
 rm -rf ~/.config/voice-studio-mcp
 ```
 

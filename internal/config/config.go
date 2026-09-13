@@ -16,7 +16,6 @@ import (
 // Config is the root configuration.
 type Config struct {
 	Server          ServerConfig      `toml:"server"`
-	Workspace       WorkspaceConfig   `toml:"workspace"`
 	Engine          EngineConfig      `toml:"engine"`
 	Synthesis       SynthesisConfig   `toml:"synthesis"`
 	Master          MasterConfig      `toml:"master"`
@@ -27,11 +26,6 @@ type Config struct {
 type ServerConfig struct {
 	LogLevel string `toml:"log_level"` // debug|info|warn|error
 	LogFile  string `toml:"log_file"`  // empty = stderr only
-}
-
-// WorkspaceConfig controls where per-work state lives.
-type WorkspaceConfig struct {
-	Dir string `toml:"workspace_dir"`
 }
 
 // EngineConfig controls how the AivisSpeech Engine is reached.
@@ -98,9 +92,6 @@ func Default() *Config {
 		Server: ServerConfig{
 			LogLevel: "info",
 		},
-		Workspace: WorkspaceConfig{
-			Dir: ExpandHome("~/.voice-studio"),
-		},
 		Engine: EngineConfig{
 			Mode:                   EngineModeManaged,
 			URL:                    "http://127.0.0.1:10101",
@@ -140,12 +131,21 @@ func Load(path string) (*Config, error) {
 		return nil, fmt.Errorf("load %s: %w", path, err)
 	}
 	if undecoded := meta.Undecoded(); len(undecoded) > 0 {
+		// A key this server removed deserves its name and its reason, not the
+		// same "unknown key" a typo gets: the operator set it deliberately and
+		// has to be told what replaced it (ADR-0013).
+		for _, k := range undecoded {
+			if k.String() == "workspace.workspace_dir" {
+				return nil, fmt.Errorf("load %s: [workspace] workspace_dir was removed in ADR-0013: "+
+					"the workspace is <work_dir>/<workspace_id>/ and work_dir is named by the caller on "+
+					"every call, so the server owns no root. Delete the key and the [workspace] section", path)
+			}
+		}
 		return nil, fmt.Errorf("load %s: unknown config keys: %v", path, undecoded)
 	}
 	if err := cfg.validate(); err != nil {
 		return nil, fmt.Errorf("load %s: %w", path, err)
 	}
-	cfg.Workspace.Dir = ExpandHome(cfg.Workspace.Dir)
 	cfg.Server.LogFile = ExpandHome(cfg.Server.LogFile)
 	cfg.Engine.Command = ExpandHome(cfg.Engine.Command)
 	cfg.Master.FFmpegPath = ExpandHome(cfg.Master.FFmpegPath)
