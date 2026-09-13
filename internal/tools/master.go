@@ -20,10 +20,10 @@ func registerMaster(srv *mcpserver.Server, d *Deps) {
 			"license was never verified. Fails with master_incomplete if any line has not been synthesized yet.",
 		InputSchema: json.RawMessage(`{
   "type": "object",
-  "required": ["workspace_id", "script_path"],
+  "required": ["work_dir", "workspace_id", "script_path"],
   "properties": {
     "workspace_id": {"type": "string"},
-    "workspace_root": {"type": "string", "description": "Absolute path to a workspace root you prepared and can read back. Pass your own session or working directory when you have one: results come back as paths, so a workspace you cannot open leaves you holding a path to nothing. Omitting it uses the server default (~/.voice-studio), which is only useful if that is readable to you."},
+    "work_dir": {"type": "string", "description": "Absolute path to a directory you can read back \u2014 your session or working directory. The workspace is <work_dir>/<workspace_id>/ and every file this server writes lands under it, so a directory you cannot open leaves you holding a path to nothing. It must already exist, and nothing here expands ~ or resolves a relative path."},
     "script_path": {"type": "string", "description": "Script JSONL path relative to the workspace root"},
     "casting_path": {"type": "string", "description": "Casting table path relative to the workspace root (default casting.toml)"},
     "format": {"type": "string", "enum": ["mp3", "m4b"], "description": "Output format (default mp3)"},
@@ -34,13 +34,13 @@ func registerMaster(srv *mcpserver.Server, d *Deps) {
 }`),
 	}, func(ctx context.Context, args json.RawMessage) (any, error) {
 		in := struct {
-			WorkspaceID   string `json:"workspace_id"`
-			WorkspaceRoot string `json:"workspace_root"`
-			ScriptPath    string `json:"script_path"`
-			CastingPath   string `json:"casting_path"`
-			Format        string `json:"format"`
-			OutputName    string `json:"output_name"`
-			Chapters      *bool  `json:"chapters"`
+			WorkspaceID string `json:"workspace_id"`
+			WorkDir     string `json:"work_dir"`
+			ScriptPath  string `json:"script_path"`
+			CastingPath string `json:"casting_path"`
+			Format      string `json:"format"`
+			OutputName  string `json:"output_name"`
+			Chapters    *bool  `json:"chapters"`
 		}{}
 		if err := unmarshalStrict(args, &in); err != nil {
 			return nil, err
@@ -59,7 +59,11 @@ func registerMaster(srv *mcpserver.Server, d *Deps) {
 			return nil, toolerr.Newf(toolerr.CodeInvalidArguments, "output_name must be a plain file name, got %q", in.OutputName)
 		}
 
-		ws, err := d.WS.EnsureIn(in.WorkspaceRoot, in.WorkspaceID)
+		workDir, err := d.WorkDir.Resolve(ctx, in.WorkDir)
+		if err != nil {
+			return nil, err
+		}
+		ws, err := d.WS.EnsureUnder(workDir, in.WorkspaceID)
 		if err != nil {
 			return nil, err
 		}

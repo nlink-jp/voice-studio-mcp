@@ -21,7 +21,7 @@ With the `voice-studio` MCP server registered, ask Claude Code / Cowork:
 
 Call `list_speakers`. **If your file writes are sandboxed** (e.g. limited
 to the project tree), create a workspace directory inside the project and
-pass its absolute path as `workspace_root` on every subsequent workspace
+pass its absolute path as `work_dir` on every subsequent workspace
 tool call (ADR-0010; a per-call parameter, not server state). On `engine_unavailable`, ask the user about their
 AivisSpeech installation (see [setup.md](setup.md)). Note the speakers and
 each `license.status`.

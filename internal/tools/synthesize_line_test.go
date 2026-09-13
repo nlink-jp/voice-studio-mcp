@@ -27,7 +27,7 @@ style_id = 200
 // returns its id.
 func (h *testHarness) seedWorkspace(id string) string {
 	h.t.Helper()
-	ws, err := h.deps.WS.Ensure(id)
+	ws, err := h.deps.WS.EnsureUnder(h.root, id)
 	if err != nil {
 		h.t.Fatal(err)
 	}

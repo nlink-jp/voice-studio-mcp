@@ -23,10 +23,10 @@ func registerSynthesizeScript(srv *mcpserver.Server, d *Deps) {
 			"re-running after editing a few lines only synthesizes those lines.",
 		InputSchema: json.RawMessage(`{
   "type": "object",
-  "required": ["workspace_id", "script_path"],
+  "required": ["work_dir", "workspace_id", "script_path"],
   "properties": {
     "workspace_id": {"type": "string"},
-    "workspace_root": {"type": "string", "description": "Absolute path to a workspace root you prepared and can read back. Pass your own session or working directory when you have one: results come back as paths, so a workspace you cannot open leaves you holding a path to nothing. Omitting it uses the server default (~/.voice-studio), which is only useful if that is readable to you."},
+    "work_dir": {"type": "string", "description": "Absolute path to a directory you can read back \u2014 your session or working directory. The workspace is <work_dir>/<workspace_id>/ and every file this server writes lands under it, so a directory you cannot open leaves you holding a path to nothing. It must already exist, and nothing here expands ~ or resolves a relative path."},
     "script_path": {"type": "string", "description": "Script JSONL path relative to the workspace root (e.g. script/episode1.jsonl)"},
     "casting_path": {"type": "string", "description": "Casting table path relative to the workspace root (default casting.toml)"},
     "force": {"type": "boolean", "description": "Ignore the cache and re-synthesize every line"}
@@ -35,16 +35,20 @@ func registerSynthesizeScript(srv *mcpserver.Server, d *Deps) {
 }`),
 	}, func(ctx context.Context, args json.RawMessage) (any, error) {
 		var in struct {
-			WorkspaceID   string `json:"workspace_id"`
-			WorkspaceRoot string `json:"workspace_root"`
-			ScriptPath    string `json:"script_path"`
-			CastingPath   string `json:"casting_path"`
-			Force         bool   `json:"force"`
+			WorkspaceID string `json:"workspace_id"`
+			WorkDir     string `json:"work_dir"`
+			ScriptPath  string `json:"script_path"`
+			CastingPath string `json:"casting_path"`
+			Force       bool   `json:"force"`
 		}
 		if err := unmarshalStrict(args, &in); err != nil {
 			return nil, err
 		}
-		ws, err := d.WS.EnsureIn(in.WorkspaceRoot, in.WorkspaceID)
+		workDir, err := d.WorkDir.Resolve(ctx, in.WorkDir)
+		if err != nil {
+			return nil, err
+		}
+		ws, err := d.WS.EnsureUnder(workDir, in.WorkspaceID)
 		if err != nil {
 			return nil, err
 		}

@@ -17,7 +17,7 @@ const testScript = `# episode 1
 
 func (h *testHarness) seedScript(wsID, name, body string) {
 	h.t.Helper()
-	ws, err := h.deps.WS.Ensure(wsID)
+	ws, err := h.deps.WS.EnsureUnder(h.root, wsID)
 	if err != nil {
 		h.t.Fatal(err)
 	}

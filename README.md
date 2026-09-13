@@ -203,7 +203,7 @@ style_id = 933744512
 
 ## Workspace layout
 
-Every workspace tool accepts an optional `workspace_root` — the absolute
+Every workspace tool accepts an optional `work_dir` — the absolute
 path of a directory the agent prepared in its own writable area (e.g.
 inside the project directory). This is how sandboxed MCP clients whose
 writes are restricted to the project tree use the server; the server never

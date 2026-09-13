@@ -25,6 +25,9 @@ type testHarness struct {
 	t    *testing.T
 	deps *Deps
 	mock *enginetest.Mock
+	// root is a directory standing in for the caller's work directory: every
+	// call names one, and the server has no default (organization ADR-021).
+	root string
 }
 
 func newHarness(t *testing.T) *testHarness {
@@ -33,7 +36,8 @@ func newHarness(t *testing.T) *testHarness {
 	t.Cleanup(mock.Close)
 
 	cfg := config.Default()
-	cfg.Workspace.Dir = t.TempDir()
+	root := t.TempDir()
+	cfg.Workspace.Dir = root
 	client := engine.NewClient(mock.URL(), 5*time.Second)
 	deps := &Deps{
 		Cfg:    cfg,
@@ -43,16 +47,31 @@ func newHarness(t *testing.T) *testHarness {
 			Cfg:           cfg.Synthesis,
 			EngineVersion: "1.1.0-mock",
 		},
-		WS:     workspace.NewManager(cfg.Workspace.Dir),
+		WS:     workspace.NewManager(),
 		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
-	return &testHarness{t: t, deps: deps, mock: mock}
+	return &testHarness{t: t, deps: deps, mock: mock, root: root}
 }
 
 // callTool drives a full MCP round-trip for one tools/call and returns the
 // first content block plus the isError flag.
+// toolsTakingWorkDir are the tools that address a workspace, and therefore
+// name the caller's work directory on every call (organization ADR-021).
+var toolsTakingWorkDir = map[string]bool{
+	"synthesize_script": true, "synthesize_line": true,
+	"register_dictionary": true, "master": true,
+}
+
 func (h *testHarness) callTool(name string, args any) (json.RawMessage, bool) {
 	h.t.Helper()
+	// Tests that are not about the work directory say nothing about it and
+	// get the one the harness prepared; tests that are about it pass their
+	// own value, which wins.
+	if m, ok := args.(map[string]any); ok && toolsTakingWorkDir[name] {
+		if _, set := m["work_dir"]; !set {
+			m["work_dir"] = h.root
+		}
+	}
 	argJSON, err := json.Marshal(args)
 	if err != nil {
 		h.t.Fatal(err)

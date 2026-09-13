@@ -17,6 +17,7 @@ import (
 	"github.com/nlink-jp/voice-studio-mcp/internal/mcpserver"
 	"github.com/nlink-jp/voice-studio-mcp/internal/synth"
 	"github.com/nlink-jp/voice-studio-mcp/internal/toolerr"
+	"github.com/nlink-jp/voice-studio-mcp/internal/workdir"
 	"github.com/nlink-jp/voice-studio-mcp/internal/workspace"
 )
 
@@ -26,7 +27,11 @@ type Deps struct {
 	Client *engine.Client
 	Synth  *synth.Synthesizer
 	WS     *workspace.Manager
-	Jobs   *job.Manager
+	// WorkDir resolves and validates the per-call work directory: the
+	// argument, then the request's _meta, then an error. The zero value
+	// works (organization ADR-021).
+	WorkDir workdir.Resolver
+	Jobs    *job.Manager
 	// JobCtx is the server-lifetime context batch jobs run under; tying jobs
 	// to the per-request ctx would abort them the moment the tool call
 	// returns.

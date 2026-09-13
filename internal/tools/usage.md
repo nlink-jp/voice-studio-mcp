@@ -9,7 +9,7 @@ audio bytes; the produced files are played by the human user on this host.
 
 ## Workspace model (read this first)
 
-All production state lives in a workspace: `<workspace_root>/<workspace_id>/`
+All production state lives in a workspace: `<work_dir>/<workspace_id>/`
 
 ```
 script/          script JSONL files   (you write these)
@@ -21,14 +21,15 @@ master/          final audio + credits (server-written)
 ```
 
 - `workspace_id`: `[a-zA-Z0-9_-]{1,64}`, one per work (novel / episode).
-- `workspace_root` (optional on every workspace tool): an **absolute path to
-  a directory you prepared** — create it with your own file tools wherever
-  you are allowed to write (e.g. inside the project directory), then pass
-  the same value on every call. **Pass a root you can read back**: every
-  result is a path under it, so a workspace you cannot open leaves you
-  holding a path to nothing. Omit it to use the server's default root
-  (`~/.voice-studio`), which requires the server and you to share an
-  unrestricted filesystem view.
+- `work_dir` (**required** on every workspace tool): the **absolute path of a
+  directory you can read back** — your session or working directory. Every
+  result is a path under it, so a directory you cannot open leaves you holding
+  a path to nothing. There is no default any more: it must already exist, and
+  nothing here expands `~` or resolves a relative path. Your runtime may supply
+  it by setting `_meta["jp.nlink/work_dir"]` on the call; the argument wins.
+- Pass the **same `work_dir` to the other media servers** when they share a
+  pipeline: image-forge renders the page images and video-studio muxes them
+  with the audio produced here, all under one directory.
 - The server never reads or writes outside the workspace (kernel-enforced;
   symlinks inside the workspace that point outside fail with
   `path_not_allowed`).
@@ -85,5 +86,10 @@ license_checked = true     # only after a human confirmed the terms
 | job_not_found | server restarted; re-run synthesize_script (cache = differential) |
 | master_incomplete | synthesize details.missing_line_ids first |
 | ffmpeg_not_found | the user must install ffmpeg |
-| path_not_allowed | use workspace-relative paths / a valid absolute workspace_root; symlinks out of the workspace are rejected |
+| path_not_allowed | use workspace-relative paths; symlinks out of the workspace are rejected |
+| work_dir_required | no `work_dir` argument and no `_meta` hint — pass the absolute path of a directory you can read back |
+| work_dir_invalid | not absolute, started with `~`, or contained `..` |
+| work_dir_not_found | not there, or not a directory — it is yours, so this is a typo; the server does not create it |
+| work_dir_not_writable | the server cannot write there |
+| work_dir_denied | a system location, your home directory itself, or a credential directory |
 | invalid_workspace_id | match [a-zA-Z0-9_-]{1,64} |

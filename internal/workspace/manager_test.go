@@ -10,8 +10,8 @@ import (
 )
 
 func TestEnsureCreatesLayout(t *testing.T) {
-	m := NewManager(t.TempDir())
-	w, err := m.Ensure("ep01")
+	m := NewManager()
+	w, err := m.EnsureUnder(t.TempDir(), "ep01")
 	if err != nil {
 		t.Fatalf("ensure: %v", err)
 	}
@@ -21,71 +21,21 @@ func TestEnsureCreatesLayout(t *testing.T) {
 		}
 	}
 	// Idempotent.
-	if _, err := m.Ensure("ep01"); err != nil {
+	if _, err := m.EnsureUnder(t.TempDir(), "ep01"); err != nil {
 		t.Errorf("second ensure: %v", err)
 	}
 }
 
 func TestEnsureRejectsBadID(t *testing.T) {
-	m := NewManager(t.TempDir())
-	if _, err := m.Ensure("../evil"); !errors.Is(err, ErrInvalidID) {
-		t.Errorf("expected invalid_workspace_id, got %v", err)
-	}
-}
-
-func TestListReturnsSortedIDs(t *testing.T) {
-	root := t.TempDir()
-	m := NewManager(root)
-	for _, id := range []string{"zeta", "alpha"} {
-		if _, err := m.Ensure(id); err != nil {
-			t.Fatal(err)
-		}
-	}
-	// Stray non-workspace entries are ignored.
-	if err := os.WriteFile(filepath.Join(root, "stray.txt"), []byte("x"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	ids, err := m.List()
-	if err != nil {
-		t.Fatalf("list: %v", err)
-	}
-	if len(ids) != 2 || ids[0] != "alpha" || ids[1] != "zeta" {
-		t.Errorf("ids: %v", ids)
-	}
-}
-
-func TestListMissingRootIsEmpty(t *testing.T) {
-	m := NewManager(filepath.Join(t.TempDir(), "does-not-exist"))
-	ids, err := m.List()
-	if err != nil || len(ids) != 0 {
-		t.Errorf("ids=%v err=%v", ids, err)
-	}
-}
-
-func TestDeleteRemovesWorkspace(t *testing.T) {
-	m := NewManager(t.TempDir())
-	w, err := m.Ensure("gone")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := m.Delete("gone"); err != nil {
-		t.Fatalf("delete: %v", err)
-	}
-	if _, err := os.Stat(w.BaseDir); !os.IsNotExist(err) {
-		t.Errorf("workspace dir should be removed, err=%v", err)
-	}
-}
-
-func TestDeleteRejectsBadID(t *testing.T) {
-	m := NewManager(t.TempDir())
-	if err := m.Delete("a/b"); !errors.Is(err, ErrInvalidID) {
+	m := NewManager()
+	if _, err := m.EnsureUnder(t.TempDir(), "../evil"); !errors.Is(err, ErrInvalidID) {
 		t.Errorf("expected invalid_workspace_id, got %v", err)
 	}
 }
 
 func TestResolveInside(t *testing.T) {
-	m := NewManager(t.TempDir())
-	w, err := m.Ensure("ws")
+	m := NewManager()
+	w, err := m.EnsureUnder(t.TempDir(), "ws")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,48 +65,26 @@ func TestResolveInside(t *testing.T) {
 	}
 }
 
-func TestEnsureInValidation(t *testing.T) {
-	m := NewManager(t.TempDir())
-	sentinel := toolerr.New(toolerr.CodePathNotAllowed, "")
-
-	if _, err := m.EnsureIn("relative/path", "ws"); !errors.Is(err, sentinel) {
-		t.Errorf("relative workspace_root should be rejected: %v", err)
+// EnsureUnder takes a work directory that internal/workdir has already
+// validated; what it still owns is the workspace id and the refusal to invent
+// the parent (organization ADR-021 §4).
+func TestEnsureUnderValidation(t *testing.T) {
+	m := NewManager()
+	if _, err := m.EnsureUnder("relative/path", "ep1"); err == nil {
+		t.Error("a relative work_dir must be refused")
 	}
-	if _, err := m.EnsureIn(filepath.Join(t.TempDir(), "missing"), "ws"); !errors.Is(err, sentinel) {
-		t.Errorf("missing workspace_root should be rejected: %v", err)
+	missing := filepath.Join(t.TempDir(), "not-there")
+	if _, err := m.EnsureUnder(missing, "ep1"); err == nil {
+		t.Error("a missing work_dir must be refused, not created")
 	}
-	file := filepath.Join(t.TempDir(), "a-file")
-	if err := os.WriteFile(file, []byte("x"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := m.EnsureIn(file, "ws"); !errors.Is(err, sentinel) {
-		t.Errorf("non-directory workspace_root should be rejected: %v", err)
-	}
-
-	// Happy path: an agent-prepared directory works and gets the layout.
-	prepared := t.TempDir()
-	w, err := m.EnsureIn(prepared, "ep1")
-	if err != nil {
-		t.Fatalf("EnsureIn: %v", err)
-	}
-	if w.BaseDir != filepath.Join(prepared, "ep1") {
-		t.Errorf("base dir: %s", w.BaseDir)
-	}
-	for _, d := range []string{DirScript, DirWav, DirMaster} {
-		if fi, err := os.Stat(w.Path(d)); err != nil || !fi.IsDir() {
-			t.Errorf("subdir %s: %v", d, err)
-		}
-	}
-	// Empty root falls back to the default root.
-	w2, err := m.EnsureIn("", "ep1")
-	if err != nil || w2.BaseDir != filepath.Join(m.Root(), "ep1") {
-		t.Errorf("fallback: %+v err=%v", w2, err)
+	if _, err := os.Stat(missing); !os.IsNotExist(err) {
+		t.Errorf("work_dir was created: %v", err)
 	}
 }
 
 func TestRootHelpersRoundTrip(t *testing.T) {
-	m := NewManager(t.TempDir())
-	w, err := m.Ensure("io")
+	m := NewManager()
+	w, err := m.EnsureUnder(t.TempDir(), "io")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,8 +119,8 @@ func TestSymlinkContainment(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	m := NewManager(t.TempDir())
-	w, err := m.Ensure("evil")
+	m := NewManager()
+	w, err := m.EnsureUnder(t.TempDir(), "evil")
 	if err != nil {
 		t.Fatal(err)
 	}

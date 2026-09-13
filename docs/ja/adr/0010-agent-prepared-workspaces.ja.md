@@ -1,6 +1,6 @@
 # ADR-0010: エージェントが用意した作業場所で voice-studio が仕事をする
 
-- **Status**: Accepted (2026-07-05)
+- **Status**: Accepted (2026-07-05)、[ADR-0013](0013-work-dir-contract.ja.md) が一部を置き換え — 引数は `work_dir`、必須、既定ルート無し
 - **経緯**: [Issue #1](https://github.com/nlink-jp/voice-studio-mcp/issues/1) の3案の議論から確定
 
 ## Context

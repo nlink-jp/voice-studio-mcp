@@ -34,7 +34,7 @@ func registerTools(srv *mcpserver.Server, cfg *config.Config, client *engine.Cli
 			Cfg:           cfg.Synthesis,
 			EngineVersion: engineVersion,
 		},
-		WS:     workspace.NewManager(cfg.Workspace.Dir),
+		WS:     workspace.NewManager(),
 		Logger: logger,
 	})
 }

@@ -35,7 +35,7 @@ the engine's voice models are Japanese.)
 | stdio | JSON-RPC with the MCP client. **stdout is transport-only**; logs go to stderr / file |
 | localhost HTTP | AivisSpeech Engine (our child process in managed mode). Zero external network traffic |
 | Child processes | The engine (ADR-0002) and ffmpeg (via the Runner interface). Exit codes and stderr tails surface in structured errors |
-| Filesystem | All I/O stays inside workspaces. The root is the default (~/.voice-studio) or an agent-prepared `workspace_root` (ADR-0010). Since the server works in agent-writable areas, every I/O goes through os.Root kernel containment (symlinks out of the root fail); `ResolveInside` remains a lexical pre-check |
+| Filesystem | All I/O stays inside workspaces. The root is the default (~/.voice-studio) or an agent-prepared `work_dir` (ADR-0010). Since the server works in agent-writable areas, every I/O goes through os.Root kernel containment (symlinks out of the root fail); `ResolveInside` remains a lexical pre-check |
 
 There are no secrets (no cloud APIs, no auth). The main threat is an
 agent's bad arguments writing/deleting outside the workspace — countered by
@@ -150,7 +150,7 @@ test seam.
 | [0007](../adr/0007-license-metadata-as-data.md) | Model terms as human-recorded data carried by the tools |
 | [0008](../adr/0008-license-collection-from-manifests.md) | License collection automated from AIVM manifests (declared); verification stays human (verified) |
 | [0009](../adr/0009-bundle-skill-with-mcp.md) | radio-drama skill bundled in this repo (contracts evolve in one commit + coherence test) |
-| [0010](../adr/0010-agent-prepared-workspaces.md) | Work in the agent-prepared workspace_root + os.Root kernel containment + get_usage |
+| [0010](../adr/0010-agent-prepared-workspaces.md) | Work in the agent-prepared work_dir + os.Root kernel containment + get_usage |
 | [0011](../adr/0011-consolidate-skill-into-multi-actor-narration.md) | Skill consolidated into multi-actor-narration (5 formats incl. generalized audio-drama); shipped as a separate .skill release asset |
 | [0012](../adr/0012-engine-signature-self-repair.md) | Fix the unsigned-engine launch failure with local self-repair (doctor --fix), not a fork/notarize |
 

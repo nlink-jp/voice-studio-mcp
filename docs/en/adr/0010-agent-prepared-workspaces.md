@@ -1,6 +1,6 @@
 # ADR-0010: voice-studio works in the workplace the agent prepared
 
-- **Status**: Accepted (2026-07-05)
+- **Status**: Accepted (2026-07-05); superseded in part by [ADR-0013](0013-work-dir-contract.md) — the argument is `work_dir`, required, with no default root
 - **Origin**: settled from the three-proposal discussion in [Issue #1](https://github.com/nlink-jp/voice-studio-mcp/issues/1)
 
 ## Context

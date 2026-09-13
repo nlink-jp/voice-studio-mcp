@@ -39,10 +39,10 @@ func registerRegisterDictionary(srv *mcpserver.Server, d *Deps) {
 			"is the mora index where the pitch falls (0 = flat).",
 		InputSchema: json.RawMessage(`{
   "type": "object",
-  "required": ["workspace_id", "words"],
+  "required": ["work_dir", "workspace_id", "words"],
   "properties": {
     "workspace_id": {"type": "string"},
-    "workspace_root": {"type": "string", "description": "Absolute path to a workspace root you prepared and can read back. Pass your own session or working directory when you have one: results come back as paths, so a workspace you cannot open leaves you holding a path to nothing. Omitting it uses the server default (~/.voice-studio), which is only useful if that is readable to you."},
+    "work_dir": {"type": "string", "description": "Absolute path to a directory you can read back \u2014 your session or working directory. The workspace is <work_dir>/<workspace_id>/ and every file this server writes lands under it, so a directory you cannot open leaves you holding a path to nothing. It must already exist, and nothing here expands ~ or resolves a relative path."},
     "words": {
       "type": "array",
       "minItems": 1,
@@ -64,9 +64,9 @@ func registerRegisterDictionary(srv *mcpserver.Server, d *Deps) {
 }`),
 	}, func(ctx context.Context, args json.RawMessage) (any, error) {
 		var in struct {
-			WorkspaceID   string       `json:"workspace_id"`
-			WorkspaceRoot string       `json:"workspace_root"`
-			Words         []dictWordIn `json:"words"`
+			WorkspaceID string       `json:"workspace_id"`
+			WorkDir     string       `json:"work_dir"`
+			Words       []dictWordIn `json:"words"`
 		}
 		if err := unmarshalStrict(args, &in); err != nil {
 			return nil, err
@@ -74,7 +74,11 @@ func registerRegisterDictionary(srv *mcpserver.Server, d *Deps) {
 		if len(in.Words) == 0 {
 			return nil, toolerr.New(toolerr.CodeMissingArgument, "words must not be empty")
 		}
-		ws, err := d.WS.EnsureIn(in.WorkspaceRoot, in.WorkspaceID)
+		workDir, err := d.WorkDir.Resolve(ctx, in.WorkDir)
+		if err != nil {
+			return nil, err
+		}
+		ws, err := d.WS.EnsureUnder(workDir, in.WorkspaceID)
 		if err != nil {
 			return nil, err
 		}

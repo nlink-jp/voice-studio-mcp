@@ -4,6 +4,31 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Breaking: `workspace_root` is now `work_dir`, required by every workspace
+  tool** (`synthesize_script`, `synthesize_line`, `register_dictionary`,
+  `master`). It means the absolute path of a directory the caller can read back;
+  the workspace is `<work_dir>/<workspace_id>/`. A call still sending
+  `workspace_root` (or `workspaceRoot` / `workspace_dir`) is refused with
+  `work_dir_required` naming the replacement. See
+  [ADR-0013](docs/en/adr/0013-work-dir-contract.md); organization ADR-021.
+- **Breaking: the `~/.voice-studio` default root is gone.** Omitting the argument
+  used to write there, which no calling agent can open: the synthesis succeeded
+  and the path it returned did not. Anything already in `~/.voice-studio` is left
+  alone.
+- A runtime may supply the directory instead of the model: the server reads
+  `_meta["jp.nlink/work_dir"]` when the argument is absent. The argument wins.
+
+### Added
+
+- `work_dir_required`, `work_dir_invalid`, `work_dir_not_found`,
+  `work_dir_not_writable`, `work_dir_denied` — five codes that say which part of
+  the contract failed. The work directory must already exist (the server does not
+  create it), be writable, and not be a system or credential location.
+
 ## [0.4.6] - 2026-08-31
 
 ### Changed

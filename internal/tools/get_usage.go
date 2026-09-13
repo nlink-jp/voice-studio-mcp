@@ -28,7 +28,7 @@ const Instructions = "voice-studio-mcp produces multi-speaker narrated Japanese 
 func registerGetUsage(srv *mcpserver.Server, d *Deps) {
 	srv.RegisterTool(mcpserver.Tool{
 		Name: "get_usage",
-		Description: "Return this server's operating manual (markdown): workspace model and workspace_root, " +
+		Description: "Return this server's operating manual (markdown): the work_dir contract and the workspace model, " +
 			"production flow, script JSONL schema, casting table format, and the error recovery table. " +
 			"Call it once before your first production.",
 		InputSchema: json.RawMessage(`{"type":"object","properties":{},"additionalProperties":false}`),
