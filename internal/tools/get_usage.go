@@ -20,8 +20,10 @@ var usageMarkdown string
 // discoverable (surfaced via the MCP `instructions` field).
 const Instructions = "voice-studio-mcp produces multi-speaker narrated Japanese audio " +
 	"(radio drama, audiobook, podcast, briefing, ...) from script JSONL via a local TTS engine. " +
-	"Japanese only -- other languages are not supported. It is stateful and file-mediated: " +
-	"inputs live in a workspace directory, outputs are returned as file paths (never audio bytes). " +
+	"Japanese only -- other languages are not supported. Every call names work_dir: the absolute path of a " +
+	"directory you can read back (your session or working directory). It is required and has no default, " +
+	"and the workspace is <work_dir>/<workspace_id>/. It is stateful and file-mediated: inputs live in that " +
+	"workspace, outputs are returned as file paths (never audio bytes). " +
 	"Call the get_usage tool before your first production to learn the workspace model, " +
 	"the script schema, and the recovery table."
 
