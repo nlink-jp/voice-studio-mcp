@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **A file that is not in the workspace is reported with the path that was
+  looked at.** The error used to read `openat narration.wav: no such file or
+  directory` — a name relative to a directory the message did not mention. The
+  workspace is a level below the `work_dir` the caller names, which is not where
+  an agent naturally puts a file; the same bare sentence in voice-scribe sent a
+  real agent off inventing a directory (2026-09-14). That fix reached the
+  scribes and image-forge and not this server, which shares a workspace with
+  video-studio-mcp. Every workspace file operation now names the absolute path and says
+  what the name is relative to.
+
+### Documentation
+
+- The English architecture and setup references, `samples/README.md` and the
+  bundled skill's argument hint still named `~/.voice-studio` and
+  `workspace-root`; the Japanese references had been corrected and these had not.
+
 ## [0.5.3] - 2026-09-14
 
 ### Added

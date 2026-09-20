@@ -100,7 +100,7 @@ verify every line has a WAV (missing → master_incomplete)
 ## 4. Workspace (one work = one workspace)
 
 ```
-~/.voice-studio/<id>/
+<work_dir>/<id>/
 ├── script/           script JSONL (agent-authored)
 ├── casting.toml      casting + license-check record (ADR-0007)
 ├── dict/words.json   dictionary registration record (idempotency basis)

@@ -16,12 +16,15 @@ bundled `multi-actor-narration` skill (`skills/multi-actor-narration/`).
 ## Quick check without the authoring steps / 台本化を省いた動作確認
 
 ```sh
-mkdir -p ~/.voice-studio/sample/script
-cp samples/script/yoiyami.jsonl ~/.voice-studio/sample/script/
-cp samples/casting.example.toml ~/.voice-studio/sample/casting.toml
+# WORK is any directory you can read back — every call names it as work_dir,
+# and the workspace is $WORK/<workspace_id>/. The server has no default of its own.
+WORK="$PWD/voice-work"
+mkdir -p "$WORK/sample/script"
+cp samples/script/yoiyami.jsonl "$WORK/sample/script/"
+cp samples/casting.example.toml "$WORK/sample/casting.toml"
 # casting.toml の speaker_uuid / style_id を list_speakers の実値に書き換えてから:
-#   synthesize_script {workspace_id:"sample", script_path:"script/yoiyami.jsonl"}
-#   check_job → master {workspace_id:"sample", script_path:"script/yoiyami.jsonl", format:"mp3"}
+#   synthesize_script {work_dir:"<$WORK の絶対パス>", workspace_id:"sample", script_path:"script/yoiyami.jsonl"}
+#   check_job → master {work_dir:"<同じ>", workspace_id:"sample", script_path:"script/yoiyami.jsonl", format:"mp3"}
 ```
 
 To exercise the full workflow (script conversion included), hand

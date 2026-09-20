@@ -159,7 +159,7 @@ dist/voice-studio-mcp licenses --toml                # generate config skeletons
 ## 8. Uninstall
 
 ```sh
-rm -rf ~/.voice-studio          # all workspaces (audio, caches)
+rm -rf <your work_dir>          # all workspaces (audio, caches)
 rm -rf ~/.config/voice-studio-mcp
 ```
 
