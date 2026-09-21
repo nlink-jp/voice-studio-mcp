@@ -212,7 +212,13 @@ ADR-0010), and the workspace directory itself must be a real directory — if
 `<work_dir>/<workspace_id>` is a symlink, the call is refused and names what
 the id resolved to, instead of running against the link's target. It is
 required and has no default — a directory the server picked
-is one you may not be able to open:
+is one you may not be able to open.
+
+A `work_dir` naming a system location, your home directory itself, a
+credential or agent-control location (`~/.ssh`, `~/.aws`, `~/.claude`, …) or
+**this server's own config directory (`~/.config/voice-studio-mcp`)** is
+refused with `work_dir_denied`, subdirectories included. The work directory is
+yours; ours is not a workspace.
 
 ```
 <work_dir>/<workspace_id>/

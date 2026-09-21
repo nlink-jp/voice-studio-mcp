@@ -88,11 +88,11 @@ func resolveConfig(explicit string) (*config.Config, string, error) {
 		cfg, err := config.Load(explicit)
 		return cfg, explicit, err
 	}
-	home, _ := os.UserHomeDir()
-	for _, c := range []string{
-		filepath.Join(home, ".config", "voice-studio-mcp", "config.toml"),
-		"config.toml",
-	} {
+	candidates := []string{"config.toml"}
+	if dir := configDir(); dir != "" {
+		candidates = []string{filepath.Join(dir, "config.toml"), "config.toml"}
+	}
+	for _, c := range candidates {
 		if _, err := os.Stat(c); err == nil {
 			cfg, err := config.Load(c)
 			return cfg, c, err

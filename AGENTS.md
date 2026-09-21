@@ -101,6 +101,15 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
 - **Voice-model licenses are data, not code** — `[[speaker_metadata]]`
   in config and `license_checked` in casting.toml; `master` warns on
   unverified models and generates the credits file.
+- **`workdir.Resolver` is built in exactly one place** — `workDirResolver()`
+  in `cmd/tools_registry.go`, reached only through `newToolDeps`. Its `Denied`
+  list carries this server's own directories (organization ADR-021 §4), which
+  today is `configDir()` = `~/.config/voice-studio-mcp`; `resolveConfig`
+  searches that same expression so the denial cannot drift from the location.
+  There is no state directory — every byte produced goes under the caller's
+  `work_dir`. Add one and it belongs in `serverOwnedDirs()`. Do not write
+  `workdir.Resolver{}` in a tool: an empty `Denied` is a resolver that lets a
+  caller point us at our own configuration.
 
 ## ADR cheat sheet
 

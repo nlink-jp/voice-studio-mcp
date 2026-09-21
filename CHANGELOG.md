@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **`work_dir` may no longer be this server's own config directory.**
+  Organization ADR-021 §4 closes the work-directory checks with "not a system
+  location … and not the server's own config or state directory" →
+  `work_dir_denied`, and the resolver has carried a `Denied` list for exactly
+  that — but nothing populated it here, so it ran as its zero value. A caller
+  could pass `work_dir = ~/.config/voice-studio-mcp` and have the server
+  create workspaces, synthesis caches and mastered output in among its own
+  configuration, on a model's say-so. `~/.config/voice-studio-mcp` and
+  everything under it is now refused. The path comes from the same expression
+  `resolveConfig` searches, so the denial cannot drift away from the location
+  it protects, and the resolver is built in one place (`workDirResolver()`)
+  that every tool reaches through `tools.Deps`.
+
 ## [0.5.5] - 2026-09-21
 
 ### Security
