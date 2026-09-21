@@ -34,7 +34,7 @@ AivisSpeech Engine で音声化し、ffmpeg で多話者の**日本語**ナレ�
 | stdio | MCP クライアントとの JSON-RPC。**stdout は転送路専用**、ログは stderr / ファイルのみ |
 | localhost HTTP | AivisSpeech Engine(managed 時は本サーバーの子プロセス)。ネットワーク外部への通信は一切ない |
 | 子プロセス | エンジン(ADR-0002)と ffmpeg(Runner interface 経由)。終了コード・stderr 末尾は構造化エラーで表面化 |
-| ファイルシステム | workspace 配下のみ読み書きする。ルートはエージェントが用意した `work_dir`(ADR-0010／ADR-0013。必須・サーバー既定なし)。エージェント書き込み可能領域で仕事をするため、全 I/O を os.Root でカーネル強制封じ込め(ルート外への symlink は失敗)。`ResolveInside` は字句事前検査 |
+| ファイルシステム | workspace 配下のみ読み書きする。ルートはエージェントが用意した `work_dir`(ADR-0010／ADR-0013。必須・サーバー既定なし)。エージェント書き込み可能領域で仕事をするため、全 I/O を os.Root でカーネル強制封じ込め(ルート外への symlink は失敗)。`ResolveInside` は字句事前検査。root は**自身のパス**は通常どおり解決するため、ワークスペースのベースは実パスで追加検証する(`makeWorkspaceDir`) — リンクだったベースは拒否する。理由はこのパスが ffmpeg に渡され、ffmpeg はいかなる root の外でも解決するため。同じ理由でマスター出力パスは spawn 前に root 経由で消す |
 
 シークレットは存在しない(クラウド API・認証なし)。脅威モデルの中心は
 「エージェントの誤った引数によるワークスペース外への書き込み/削除」であり、

@@ -84,6 +84,20 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
   GUI-managed engine and survives a prior SIGKILL orphan).
 - **Engine version is part of the cache key** — an engine update
   invalidates caches; that is intentional (output may change).
+- **The workspace base is verified by real path, because the path is handed to
+  ffmpeg, which resolves it outside any root** — `os.Root` contains operations
+  *within* a root but resolves the root path itself normally, so a link planted
+  at `<work_dir>/<id>` would anchor every read and write on its target while
+  reporting success. `makeWorkspaceDir` creates the directory through an
+  `os.Root` on `work_dir` **and** compares `filepath.EvalSymlinks` of the base
+  against `<real work_dir>/<id>`; a mismatch is refused. The comparison is the
+  load-bearing half — the root-based mkdir alone cannot help a path that later
+  leaves the process.
+- **The mastered file is cleared through the root before the spawn** — ffmpeg
+  opens the output path itself and would follow a symlink planted at
+  `master/<name>.<format>`, overwriting the link's target. `Build` calls
+  `ws.RemoveAll(outRel)` first (a root-based remove unlinks the link, never
+  what it points at) so ffmpeg always creates the file fresh.
 - **Voice-model licenses are data, not code** — `[[speaker_metadata]]`
   in config and `license_checked` in casting.toml; `master` warns on
   unverified models and generates the credits file.

@@ -35,7 +35,7 @@ the engine's voice models are Japanese.)
 | stdio | JSON-RPC with the MCP client. **stdout is transport-only**; logs go to stderr / file |
 | localhost HTTP | AivisSpeech Engine (our child process in managed mode). Zero external network traffic |
 | Child processes | The engine (ADR-0002) and ffmpeg (via the Runner interface). Exit codes and stderr tails surface in structured errors |
-| Filesystem | All I/O stays inside workspaces. The root is the agent-prepared `work_dir` (ADR-0010 / ADR-0013: required, with no server default). Since the server works in agent-writable areas, every I/O goes through os.Root kernel containment (symlinks out of the root fail); `ResolveInside` remains a lexical pre-check |
+| Filesystem | All I/O stays inside workspaces. The root is the agent-prepared `work_dir` (ADR-0010 / ADR-0013: required, with no server default). Since the server works in agent-writable areas, every I/O goes through os.Root kernel containment (symlinks out of the root fail); `ResolveInside` remains a lexical pre-check. A root resolves *its own* path normally, so the workspace base is additionally verified by real path (`makeWorkspaceDir`) — a base that turns out to be a link is refused, because the path is handed to ffmpeg, which resolves it outside any root; the mastered output path is cleared through the root pre-spawn for the same reason |
 
 There are no secrets (no cloud APIs, no auth). The main threat is an
 agent's bad arguments writing/deleting outside the workspace — countered by

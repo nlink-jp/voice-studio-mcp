@@ -208,7 +208,10 @@ path of a directory the agent prepared in its own writable area (e.g.
 inside the project directory). This is how sandboxed MCP clients whose
 writes are restricted to the project tree use the server; the server never
 follows symlinks out of a workspace (kernel-enforced via os.Root,
-ADR-0010). It is required and has no default — a directory the server picked
+ADR-0010), and the workspace directory itself must be a real directory — if
+`<work_dir>/<workspace_id>` is a symlink, the call is refused and names what
+the id resolved to, instead of running against the link's target. It is
+required and has no default — a directory the server picked
 is one you may not be able to open:
 
 ```

@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **A symlink planted where the workspace goes no longer redirects the whole
+  production outside `work_dir`.** The server opens each workspace as a
+  containment root, but a root resolves its own path normally: if something had
+  already put a symlink at `<work_dir>/<workspace_id>` — another tool with write
+  access to `work_dir`, or code in a sandbox — every read and write, including
+  the synthesized WAVs and the mastered file, landed in the link's target while
+  every result reported success and printed a path under `work_dir`. The
+  workspace directory is now created through a root on `work_dir` and then
+  checked by real path; a workspace that turns out to be a link is refused,
+  naming the id and what it resolved to.
+- **A symlink at the output path no longer gets its target overwritten by the
+  master.** ffmpeg opens the mastered file itself and cannot inherit the
+  containment root, so a link left at `master/<name>.<format>` was followed and
+  whatever it pointed at was overwritten with the audio. The path is now cleared
+  through the workspace root before ffmpeg is spawned, which removes the link
+  and not its target, so mastering always creates the file fresh.
+
 ## [0.5.4] - 2026-09-21
 
 ### Fixed

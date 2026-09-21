@@ -244,3 +244,48 @@ func TestFFMetadataEscaping(t *testing.T) {
 		t.Errorf("escaping: %s", s)
 	}
 }
+
+// TestBuildDoesNotFollowLinkedOutput pins the ADR-0010 boundary at the one
+// path that leaves the containment root: the mastered file. ffmpeg cannot
+// inherit os.Root — it opens the output path itself — so a symlink planted at
+// master/<name>.<format> was followed and the link's target overwritten with
+// the master.
+//
+// Which layer this observes: the spawn boundary, end to end. fakeRunner
+// materializes each command's output with os.WriteFile on the path it was
+// handed, which follows a final-component symlink exactly as ffmpeg does, so
+// the assertion below is on the real outcome and not merely on the
+// preparation step. No real ffmpeg is needed.
+func TestBuildDoesNotFollowLinkedOutput(t *testing.T) {
+	// EvalSymlinks first: on macOS t.TempDir() sits under /var, itself a link.
+	outside, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	victim := filepath.Join(outside, "victim.mp3")
+	if err := os.WriteFile(victim, []byte("do not overwrite me"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	ws := seed(t, testLines)
+	if err := os.Symlink(victim, ws.Path(workspace.DirMaster, "ep1.mp3")); err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := newMaster(&fakeRunner{}).Build(context.Background(), ws, "ep1", testLines, testCastingTable, Options{Format: "mp3"})
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+
+	if got, err := os.ReadFile(victim); err != nil || string(got) != "do not overwrite me" {
+		t.Errorf("the link's target was overwritten: %q err=%v", got, err)
+	}
+	// The master still had to land inside the workspace, as a real file.
+	fi, err := os.Lstat(res.MasterPath)
+	if err != nil {
+		t.Fatalf("master not written: %v", err)
+	}
+	if !fi.Mode().IsRegular() {
+		t.Errorf("master is not a regular file (mode %s): the link survived the encode", fi.Mode())
+	}
+}

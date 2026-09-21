@@ -163,7 +163,16 @@ func (m *Master) Build(ctx context.Context, ws *workspace.Workspace, scriptStem 
 	if name == "" {
 		name = scriptStem
 	}
-	outPath := ws.Path(workspace.DirMaster, name+"."+opts.Format)
+	outRel := filepath.Join(workspace.DirMaster, name+"."+opts.Format)
+	// ffmpeg cannot inherit os.Root: it opens the output path itself, so a
+	// symlink planted at master/<name>.<format> would be followed and the
+	// link's target overwritten with the master. Clear the path through the
+	// workspace root first — a root-based remove unlinks the link, never what
+	// it points at — so ffmpeg always creates the file fresh.
+	if err := ws.RemoveAll(outRel); err != nil {
+		return Result{}, err
+	}
+	outPath := ws.Path(outRel)
 	ln := Loudnorm{I: m.Cfg.LoudnormI, TP: m.Cfg.LoudnormTP, LRA: m.Cfg.LoudnormLRA}
 	bitrate := m.Cfg.MP3Bitrate
 	if opts.Format == "m4b" {

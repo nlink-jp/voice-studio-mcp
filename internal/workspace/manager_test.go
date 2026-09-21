@@ -190,3 +190,51 @@ func TestAMissingFileNamesThePathItLookedFor(t *testing.T) {
 		}
 	}
 }
+
+// TestEnsureRefusesLinkedWorkspaceDir pins the containment property that
+// os.Root alone cannot give: <work_dir>/<id> itself must be a real directory.
+// TestSymlinkContainment above covers links planted *inside* a workspace;
+// os.Root contains operations within a root but resolves the root path
+// normally, so a link pre-planted at <work_dir>/<id> — by any other tool with
+// write access to work_dir — made os.OpenRoot(w.BaseDir) anchor on the link's
+// target, and every read and write then landed outside work_dir while
+// reporting success.
+func TestEnsureRefusesLinkedWorkspaceDir(t *testing.T) {
+	// EvalSymlinks first: on macOS t.TempDir() sits under /var, which is
+	// itself a link to /private/var, so a raw comparison would never match.
+	workDir, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	outside, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(workDir, "ep1")); err != nil {
+		t.Fatal(err)
+	}
+
+	w, err := NewManager().EnsureUnder(workDir, "ep1")
+	if err == nil {
+		t.Fatalf("a linked workspace dir was accepted: base=%s", w.BaseDir)
+	}
+	if !strings.Contains(err.Error(), "ep1") {
+		t.Errorf("the refusal does not name the workspace id: %q", err)
+	}
+	if !strings.Contains(err.Error(), outside) {
+		t.Errorf("the refusal does not name what the id resolved to: %q", err)
+	}
+
+	// Nothing may have been created or written through the link.
+	entries, err := os.ReadDir(outside)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 0 {
+		names := make([]string, 0, len(entries))
+		for _, e := range entries {
+			names = append(names, e.Name())
+		}
+		t.Errorf("the link's target was written through: %v", names)
+	}
+}
