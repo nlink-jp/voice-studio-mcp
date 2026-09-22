@@ -46,8 +46,6 @@ type Result struct {
 	Loudnorm         map[string]any `json:"loudnorm"`
 }
 
-// Build validates that every line has a synthesized WAV, then concatenates
-// them (with per-line trailing silences), loudness-normalizes, and encodes.
 // privateRoot is where each master's private directory is made: the user's
 // cache directory, which no agent write lane covers — $TMPDIR is in gem-agent's
 // and lagent's write lanes, and a process running as the same user lists it
@@ -81,6 +79,8 @@ func privateDir() (string, error) {
 	return os.MkdirTemp(root, "master-")
 }
 
+// Build validates that every line has a synthesized WAV, then concatenates
+// them (with per-line trailing silences), loudness-normalizes, and encodes.
 func (m *Master) Build(ctx context.Context, ws *workspace.Workspace, scriptStem string, lines []script.Line, casting *script.Casting, opts Options) (Result, error) {
 	if _, err := exec.LookPath(m.Cfg.FFmpegPath); err != nil {
 		return Result{}, toolerr.Newf(toolerr.CodeFFmpegNotFound,

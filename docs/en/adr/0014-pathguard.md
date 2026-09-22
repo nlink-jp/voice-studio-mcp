@@ -134,17 +134,17 @@ whether or not their targets existed).
   made per master under the user's cache directory (`~/Library/Caches/voice-studio-mcp/master` on macOS). Not
   `$TMPDIR`: gem-agent's and lagent's write lanes can write `$TMPDIR` and `/private/tmp`, and a process running as the
   same user lists them, so an unguessable name is no barrier (the independent review measured it on video-studio-mcp,
-  built the same way). Neither lane can write the cache directory. What a server killed mid-master left is cleared by
-  the next master once it is a day old. Only the master is placed, through `os.Root`, under a
-  temporary name and then renamed (a link at its name is replaced, not followed). The concat list is ffconcat with
+  built the same way). No lane can write the cache directory. What a server killed mid-master left is cleared by the
+  next master once it is a day old. Only the master is placed, through `os.Root`, under a temporary name and then
+  renamed (a link at its name is replaced, not followed). The concat list is ffconcat with
   `option format_whitelist wav` on every entry, reads the `file` protocol only, and `-xerror` fails the master on a
   refused entry instead of writing a short one. The other side of that: a WAV that `ParseWAV` accepts but ffmpeg
   reports an error in part-way (a broken file placed by hand, say) now fails the master rather than leaving a gap in
   it. A path holding a control character is not written into the list.
 - **Accepted residual** (the operator's rule: an overall risk assessment rather than perfection): a line WAV swapped
   for a link to outside between its judgement and ffmpeg's open can be read — only an outside file that parses as WAV.
-  The cache directory is writable by a process of the same user running outside the sandbox — which is what the user
-  can do anyway. pathguard is at v0.3.0 (no behaviour change for this server).
+  The cache directory is writable by a process of the same user outside any sandbox (the user's own shell, say) —
+  which is what the user can do anyway. pathguard is at v0.3.0 (no behaviour change for this server).
 
 ## References
 
