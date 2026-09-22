@@ -123,6 +123,18 @@ whether or not their targets existed).
   Within one step a path's answer is remembered, so a directory swapped for a link between a line's
   read and its verification before ffmpeg is not judged again.
 
+## Amendment (2026-09-22, v0.6.2): each concat entry is read as WAV only
+
+- **Measured** (ffmpeg 9.0.2, fake files in a scratch directory): with a line WAV in the workspace replaced by a file
+  holding `ffconcat version 1.0\nfile 'k'` (k an in-workspace link leading outside), ffmpeg followed it through the
+  concat list and the outside file's audio went into the output. A whitelist (concat,wav) on the list input as a whole
+  does not stop it: an entry can still be read as a concat list.
+- **Fixed:** the concat list is written in the ffconcat form with `option format_whitelist wav` on each entry (a
+  crafted entry fails to open; a concat of ordinary and silence WAVs still works, measured). The list input reads the
+  `file` protocol only. A path holding a control character is not written into the list.
+- The swap between the judgement and the read (above) stays an accepted residual (the operator's rule: an overall
+  risk assessment rather than perfection). pathguard is at v0.3.0 (no behaviour change for this server).
+
 ## References
 
 - Organization ADR-021 (the work-dir contract of the file-mediated MCP servers)

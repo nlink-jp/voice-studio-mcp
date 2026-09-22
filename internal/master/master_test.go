@@ -114,7 +114,12 @@ func TestBuildMP3(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	entries := strings.Split(strings.TrimSpace(string(list)), "\n")
+	var entries []string // the file lines; each is followed by its format option
+	for _, line := range strings.Split(strings.TrimSpace(string(list)), "\n") {
+		if strings.HasPrefix(line, "file ") {
+			entries = append(entries, line)
+		}
+	}
 	if len(entries) != 5 { // 1.wav, silence, 2.wav, 3.wav, silence
 		t.Errorf("concat entries: %v", entries)
 	}
@@ -232,9 +237,34 @@ func TestBuildFFmpegNotFound(t *testing.T) {
 }
 
 func TestConcatListQuoting(t *testing.T) {
-	got := concatList([]string{"/a/it's.wav"})
-	if got != "file '/a/it'\\''s.wav'\n" {
-		t.Errorf("quoting: %q", got)
+	got, err := concatList([]string{"/a/it's.wav"})
+	if err != nil || !strings.Contains(got, "file '/a/it'\\''s.wav'\n") {
+		t.Errorf("quoting: %q, %v", got, err)
+	}
+}
+
+// Each entry is read as WAV only, so a line WAV replaced by a playlist is not
+// followed (measured with ffmpeg 9.0.2); the list is in the ffconcat form the
+// per-entry option needs, and only the file protocol is allowed.
+func TestConcatEntriesAreReadAsWAVOnly(t *testing.T) {
+	got, err := concatList([]string{"/w/l1.wav", "/w/l2.wav"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "ffconcat version 1.0\nfile '/w/l1.wav'\noption format_whitelist wav\nfile '/w/l2.wav'\noption format_whitelist wav\n"
+	if got != want {
+		t.Errorf("concat list = %q, want %q", got, want)
+	}
+	if args := strings.Join(concatArgs("/w/list.txt", "", "mp3", "/w/o.mp3", Loudnorm{}, "128k"), " "); !strings.Contains(args, "-protocol_whitelist file -i /w/list.txt") {
+		t.Errorf("concat input does not limit protocols: %s", args)
+	}
+}
+
+func TestConcatListRefusesControlCharacters(t *testing.T) {
+	for _, p := range []string{"/w/A\nfile /etc/hosts\n#/l.wav", "/w/a\rb.wav", "/w/a\x00b.wav"} {
+		if _, err := concatList([]string{p}); err == nil {
+			t.Errorf("concatList(%q) accepted a control character", p)
+		}
 	}
 }
 

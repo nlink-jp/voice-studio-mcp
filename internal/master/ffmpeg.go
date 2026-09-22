@@ -39,6 +39,7 @@ func concatArgs(listPath, metadataPath, format, outPath string, ln Loudnorm, bit
 		"-y",
 		"-f", "concat",
 		"-safe", "0",
+		"-protocol_whitelist", "file",
 		"-i", listPath,
 	}
 	if metadataPath != "" {
@@ -57,14 +58,25 @@ func concatArgs(listPath, metadataPath, format, outPath string, ln Loudnorm, bit
 
 // concatList renders the concat demuxer input file. Single quotes inside
 // paths are escaped per the ffmpeg concat demuxer quoting rules.
-func concatList(paths []string) string {
+//
+// Each entry may be read as WAV only (2026-09-22). ffmpeg picks an input's
+// format from its contents, so a line WAV replaced in the workspace by a file
+// holding "ffconcat version 1.0\nfile 'k'" — k a link to a file outside the
+// workspace — was followed, and the linked file's audio went into the output
+// (measured with ffmpeg 9.0.2). A path holding a control character is refused:
+// a newline would end the entry and start one of the path's own making.
+func concatList(paths []string) (string, error) {
 	var b strings.Builder
+	b.WriteString("ffconcat version 1.0\n")
 	for _, p := range paths {
+		if strings.ContainsFunc(p, func(r rune) bool { return r < ' ' || r == 0x7f }) {
+			return "", fmt.Errorf("path %q holds a control character and cannot be written into ffmpeg's concat list", p)
+		}
 		b.WriteString("file '")
 		b.WriteString(strings.ReplaceAll(p, "'", `'\''`))
-		b.WriteString("'\n")
+		b.WriteString("'\noption format_whitelist wav\n")
 	}
-	return b.String()
+	return b.String(), nil
 }
 
 // Chapter is one m4b chapter (times in milliseconds).

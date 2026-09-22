@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **A line WAV replaced by an ffconcat list was followed.** The concat list is
+  now ffconcat with `option format_whitelist wav` on every entry, and the list
+  input reads the `file` protocol only, so a replaced entry fails instead of
+  leading ffmpeg outside the workspace (measured with ffmpeg 9.0.2).
+- A path holding a control character is no longer written into the concat list.
+
+### Changed
+
+- nlink-jp/pathguard v0.3.0.
+
 ## [0.6.1] - 2026-09-22
 
 ### Security

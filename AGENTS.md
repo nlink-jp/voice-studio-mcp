@@ -54,7 +54,10 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
 - `internal/job/` — in-memory async jobs; shared semaphore
   (`synthesis.concurrency`, default 1); NOT persisted (by design)
 - `internal/master/` — ffmpeg arg builders (pure functions) + Runner
-  interface (fake in tests); silence dedupe, ffmetadata chapters, credits
+  interface (fake in tests); silence dedupe, ffmetadata chapters, credits.
+  The concat list is ffconcat with `option format_whitelist wav` on every
+  entry, and the list input reads `file` only — a line WAV replaced by an
+  ffconcat list was followed outside the workspace (ADR-0014, v0.6.2)
 - `e2e/` — `//go:build e2e` harness spawning the built binary
 
 ## Gotchas
