@@ -238,7 +238,7 @@ work_dir は呼び出し側のものであり、サーバー自身のディレ�
 ├── dict/words.json  登録済み辞書の記録
 ├── wav/<id>.wav     行単位の合成音声
 ├── cache/index.json 合成キャッシュインデックス
-└── master/          マスター出力+クレジット+tmp
+└── master/          マスター出力+クレジット
 ```
 
 ## テスト

@@ -3,9 +3,24 @@ package tools
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 )
+
+// The home directory is a temporary one for every test here: a master makes
+// its private directory under the user cache directory, which is under $HOME.
+func TestMain(m *testing.M) {
+	home, err := os.MkdirTemp("", "voice-studio-tools-test-")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	_ = os.Setenv("HOME", home)
+	code := m.Run()
+	_ = os.RemoveAll(home)
+	os.Exit(code)
+}
 
 // fakeFFmpegRunner materializes each ffmpeg output file (last arg).
 type fakeFFmpegRunner struct {

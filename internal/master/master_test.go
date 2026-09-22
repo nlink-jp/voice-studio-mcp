@@ -3,10 +3,12 @@ package master
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/nlink-jp/voice-studio-mcp/internal/config"
 	"github.com/nlink-jp/voice-studio-mcp/internal/engine/enginetest"
@@ -47,6 +49,23 @@ func (f *fakeRunner) Run(ctx context.Context, name string, args []string) ([]byt
 	out := args[len(args)-1]
 	_ = os.WriteFile(out, []byte("fake-output"), 0o644)
 	return nil, nil, 0, nil
+}
+
+// testPrivateRoot stands in for the user cache directory, so a test run leaves
+// nothing there and a test can look at what a master left behind.
+var testPrivateRoot string
+
+func TestMain(m *testing.M) {
+	dir, err := os.MkdirTemp("", "voice-studio-master-test-")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	testPrivateRoot = filepath.Join(dir, "master")
+	privateRoot = func() (string, error) { return testPrivateRoot, nil }
+	code := m.Run()
+	_ = os.RemoveAll(dir)
+	os.Exit(code)
 }
 
 func intp(v int) *int { return &v }
@@ -389,5 +408,42 @@ func TestALinkPlantedAtTheMasterIsReplacedNotWrittenThrough(t *testing.T) {
 	}
 	if fi, err := os.Lstat(ws.Path(workspace.DirMaster, "ep1.mp3")); err != nil || !fi.Mode().IsRegular() {
 		t.Errorf("master/ep1.mp3 is not a regular file: %v %v", fi, err)
+	}
+}
+
+// The private directory goes when the master ends, succeeded or failed, and a
+// directory more than a day old — left by a server killed mid-master — is
+// cleared by the next master; a younger one (a master in progress) is not.
+func TestThePrivateDirectoryDoesNotOutliveTheMaster(t *testing.T) {
+	stale := filepath.Join(testPrivateRoot, "master-stale")
+	fresh := filepath.Join(testPrivateRoot, "master-fresh")
+	for _, d := range []string{stale, fresh} {
+		if err := os.MkdirAll(d, 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	defer func() { _ = os.Remove(fresh) }()
+	old := time.Now().Add(-25 * time.Hour)
+	if err := os.Chtimes(stale, old, old); err != nil {
+		t.Fatal(err)
+	}
+	for _, failAt := range []int{0, 1} {
+		ws := seed(t, testLines)
+		fr := &fakeRunner{failAt: failAt, exitCode: 1}
+		_, err := newMaster(fr).Build(context.Background(), ws, "ep1", testLines, testCastingTable, Options{Format: "mp3"})
+		if (err != nil) != (failAt != 0) {
+			t.Fatalf("failAt %d: err = %v", failAt, err)
+		}
+		entries, err := os.ReadDir(testPrivateRoot)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var left []string
+		for _, e := range entries {
+			left = append(left, e.Name())
+		}
+		if len(left) != 1 || left[0] != "master-fresh" {
+			t.Errorf("failAt %d: left in the private root: %v (want only master-fresh)", failAt, left)
+		}
 	}
 }

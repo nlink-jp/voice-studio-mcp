@@ -239,7 +239,7 @@ are listed in [ADR-0014](docs/en/adr/0014-pathguard.md).
 ├── dict/words.json  registered dictionary record
 ├── wav/<id>.wav     per-line synthesized audio
 ├── cache/index.json synthesis cache index
-└── master/          mastered outputs + credits + tmp
+└── master/          mastered outputs + credits
 ```
 
 ## Testing

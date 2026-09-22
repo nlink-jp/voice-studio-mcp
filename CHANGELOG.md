@@ -13,7 +13,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   master, and a caller writing into the workspace during a render could rewrite
   the concat list (10 of 10 runs) or plant a link where ffmpeg wrote the master
   (measured with ffmpeg 9.0.2). Silences, the concat list, chapters and the
-  master are now made in a private directory outside the workspace, and only
+  master are now made in a private directory outside the workspace — under the
+  user cache directory, which the agent sandboxes' write lanes cannot write
+  (their `$TMPDIR` they can) — and only
   the master is placed in the workspace through its root (a link at its name is
   replaced, not followed). Each list entry is read as WAV only, over the `file`
   protocol only, and a refused entry fails the master (`-xerror`) instead of
@@ -23,7 +25,11 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 - Nothing is left under `master/tmp`; an older version's leftovers there are
-  removed.
+  removed. A master's private directory more than a day old (a server killed
+  mid-master) is removed by the next master.
+- A line WAV ffmpeg reports an error in part-way (a broken file placed by
+  hand) now fails the master with `ffmpeg_failed` instead of leaving a gap in
+  it (`-xerror`); re-synthesize that line.
 - nlink-jp/pathguard v0.3.0.
 
 ## [0.6.1] - 2026-09-22

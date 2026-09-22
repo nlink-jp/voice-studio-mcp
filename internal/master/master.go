@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/nlink-jp/voice-studio-mcp/internal/config"
 	"github.com/nlink-jp/voice-studio-mcp/internal/script"
@@ -47,6 +48,39 @@ type Result struct {
 
 // Build validates that every line has a synthesized WAV, then concatenates
 // them (with per-line trailing silences), loudness-normalizes, and encodes.
+// privateRoot is where each master's private directory is made: the user's
+// cache directory, which no agent write lane covers — $TMPDIR is in gem-agent's
+// and lagent's write lanes, and a process running as the same user lists it
+// (ADR-0014). A test replaces it.
+var privateRoot = func() (string, error) {
+	c, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(c, "voice-studio-mcp", "master"), nil
+}
+
+// privateDir makes this master's directory under privateRoot, clearing what
+// masters more than a day old left behind (a server killed mid-master cannot
+// clean up after itself).
+func privateDir() (string, error) {
+	root, err := privateRoot()
+	if err != nil {
+		return "", err
+	}
+	if err := os.MkdirAll(root, 0o700); err != nil {
+		return "", err
+	}
+	if entries, err := os.ReadDir(root); err == nil {
+		for _, e := range entries {
+			if info, err := e.Info(); err == nil && time.Since(info.ModTime()) > 24*time.Hour {
+				_ = os.RemoveAll(filepath.Join(root, e.Name()))
+			}
+		}
+	}
+	return os.MkdirTemp(root, "master-")
+}
+
 func (m *Master) Build(ctx context.Context, ws *workspace.Workspace, scriptStem string, lines []script.Line, casting *script.Casting, opts Options) (Result, error) {
 	if _, err := exec.LookPath(m.Cfg.FFmpegPath); err != nil {
 		return Result{}, toolerr.Newf(toolerr.CodeFFmpegNotFound,
@@ -100,7 +134,7 @@ func (m *Master) Build(ctx context.Context, ws *workspace.Workspace, scriptStem 
 	// ffmpeg started — or a link planted where ffmpeg writes — steered it
 	// outside the workspace (measured, ADR-0014). ffmpeg reads only the line
 	// WAVs from the workspace, each as WAV only.
-	priv, err := os.MkdirTemp("", "voice-studio-master-")
+	priv, err := privateDir()
 	if err != nil {
 		return Result{}, toolerr.Newf(toolerr.CodeWorkspaceFailed, "make a private master directory: %v", err)
 	}

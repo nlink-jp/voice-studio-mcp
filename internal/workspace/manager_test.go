@@ -341,3 +341,44 @@ func TestAPathIsJudgedOncePerWorkspace(t *testing.T) {
 		t.Errorf("three reads of one path judged it %d times, want once", got)
 	}
 }
+
+// PlaceFile writes through a temporary name next to the destination: a link a
+// caller plants at that name, or at the destination, is replaced — the file it
+// points at, outside the workspace, is never written.
+func TestPlaceFileReplacesLinksItFinds(t *testing.T) {
+	w, err := NewManager(allowAll, noFloor).EnsureUnder(t.TempDir(), "ep01")
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := filepath.Join(t.TempDir(), "rendered.mp3")
+	if err := os.WriteFile(src, []byte("RENDERED"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(w.Path(DirMaster), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, planted := range []string{"ep01.mp3.tmp", "ep01.mp3"} {
+		victim := filepath.Join(t.TempDir(), "victim")
+		if err := os.WriteFile(victim, []byte("keep me"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		link := w.Path(DirMaster, planted)
+		_ = os.Remove(link)
+		if err := os.Symlink(victim, link); err != nil {
+			t.Skipf("symlinks unavailable: %v", err)
+		}
+		if err := w.PlaceFile(filepath.Join(DirMaster, "ep01.mp3"), src); err != nil {
+			t.Fatalf("%s planted: PlaceFile: %v", planted, err)
+		}
+		if b, _ := os.ReadFile(victim); string(b) != "keep me" {
+			t.Errorf("%s planted: the link's target was written: %q", planted, b)
+		}
+		fi, err := os.Lstat(w.Path(DirMaster, "ep01.mp3"))
+		if err != nil || !fi.Mode().IsRegular() {
+			t.Fatalf("%s planted: the destination is not a regular file: %v %v", planted, fi, err)
+		}
+		if b, _ := os.ReadFile(w.Path(DirMaster, "ep01.mp3")); string(b) != "RENDERED" {
+			t.Errorf("%s planted: destination holds %q", planted, b)
+		}
+	}
+}
