@@ -35,6 +35,9 @@ master/          final audio + credits (server-written)
   `path_not_allowed`). The workspace directory itself must be a real directory:
   if `<work_dir>/<workspace_id>` is a symlink, the call is refused with
   `path_not_allowed` rather than run against the link's target.
+- A `script_path` or `casting_path` that is a `.env`, lies in this server's
+  config directory, or is where a link inside a credential directory points is
+  refused with `path_not_allowed` before it is read, whether or not it exists.
 
 ## Production flow
 
@@ -88,7 +91,7 @@ license_checked = true     # only after a human confirmed the terms
 | job_not_found | server restarted; re-run synthesize_script (cache = differential) |
 | master_incomplete | synthesize details.missing_line_ids first |
 | ffmpeg_not_found | the user must install ffmpeg |
-| path_not_allowed | use workspace-relative paths; symlinks out of the workspace are rejected |
+| path_not_allowed | use workspace-relative paths; symlinks out of the workspace are rejected, and so is a script or casting table that is a `.env`, lies in this server's config directory, or is where a link inside a credential directory points (whether or not it exists) |
 | work_dir_required | no `work_dir` argument and no `_meta` hint — pass the absolute path of a directory you can read back |
 | work_dir_invalid | not absolute, started with `~`, or contained `..` |
 | work_dir_not_found | not there, or not a directory — it is yours, so this is a typo; the server does not create it |

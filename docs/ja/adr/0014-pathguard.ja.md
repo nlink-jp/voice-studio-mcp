@@ -55,6 +55,28 @@ gem-agent・lagent と同じものを 1 つ持つ。
 `workdir.Resolver.CheckBeneath`（pathguard v0.2.0）で判定する。配線は `newToolDeps`。判定の無い Manager はすべての
 ワークスペースを拒む。pathguard v0.2.0 は NUL バイトを含むパスも拒む。
 
+## Amendment (2026-09-22, v0.6.1): 呼び出し側が名指すファイルを読む前に判定する
+
+`script_path` と `casting_path` はワークスペース相対で `os.Root` 越しに読むが、床には掛けていなかった。ワークスペースは
+`CheckBeneath` を通っても床の場所を含み得る（`.env`、このサーバーの設定ディレクトリ、`~/.ssh` 内のリンクが同期フォルダを
+指すならその行き先）。そうしたファイルは台本・キャスティング表として読まれ、中身が解析エラーに出た（`unknown keys:
+[SECRET]`、`invalid character 'S'`）。答えも、無いときの「not found」と違った。slack-mcp-extender と chrome-pilot-mcp の
+独立レビューで見つかった「存在で答えが変わる」型を、HOME を一時ディレクトリにしたテストで実測して見つけた（20 組中 12 組。
+仕掛けたリンクで外へ出る 8 組は `os.Root` が存在に関係なく拒んでいた）。
+
+- `refused`（internal/tools/synthesize_script.go）が、読むファイル（`ws.Path(rel)`）を pathguard の Local 方針とこの
+  サーバー自身のディレクトリで判定してから `ws.ReadFile` する。`loadValidatedScript` と `loadCasting` の 2 か所で、
+  すべてのツールがそれを通る。pathguard がパス上のリンクを自分で辿るので、置き場所を別に求める必要は無い。
+- `TestExistenceIsNotRevealed` は、同じパスをファイルがある状態と消した状態で `synthesize_script`・`synthesize_line`・
+  `master` を呼び、答え全体を比べ、中身が出ないことを確かめる。4 つの変異（床を外す・台本の判定を外す・キャスティングの
+  判定を外す・読んでから判定する）はすべてアサーションで落ちた。
+- 既知の限界（いずれも pathguard 側。次のリリースに向けて記録）:
+  - `work_dir` は pathguard/workdir が組織 ADR-022 §4 の順序（not found が denied より先）で検証するので、資格情報の
+    ディレクトリを指す `work_dir` は、存在するかどうかで答えが変わる。
+  - 非 ASCII 名のリンク先を別の Unicode 正規化で綴ると、同一性で拒むのはそれが存在するときだけになる（pathguard は
+    正規化しない）。別の場所に作った資格情報ファイルへのハードリンクも同じ。ハードリンクを作れる者はすでにそのファイルに
+    届いている。
+
 ## References
 
 - 組織 ADR-021（ファイル渡し MCP サーバーの work dir 契約）

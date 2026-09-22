@@ -221,6 +221,13 @@ refused with `work_dir_denied`, subdirectories included, under any spelling
 ([nlink-jp/pathguard](https://github.com/nlink-jp/pathguard) makes that
 judgement). The work directory is yours; ours is not a workspace.
 
+A `script_path` or `casting_path` that is a `.env`, lies in this server's
+config directory, or is where a link inside a credential directory points is
+refused with `path_not_allowed` before anything reads it — whether or not the
+file is there, with the same answer either way. A workspace can contain such a
+place (one inside a sync folder that `~/.ssh/config` links into), and read as
+a script its contents would come back in a parse error.
+
 ```
 <work_dir>/<workspace_id>/
 ├── script/          script JSONL files (agent-authored)

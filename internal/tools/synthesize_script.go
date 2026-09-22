@@ -11,6 +11,7 @@ import (
 	"github.com/nlink-jp/voice-studio-mcp/internal/script"
 	"github.com/nlink-jp/voice-studio-mcp/internal/synth"
 	"github.com/nlink-jp/voice-studio-mcp/internal/toolerr"
+	"github.com/nlink-jp/voice-studio-mcp/internal/workdir"
 	"github.com/nlink-jp/voice-studio-mcp/internal/workspace"
 )
 
@@ -52,7 +53,7 @@ func registerSynthesizeScript(srv *mcpserver.Server, d *Deps) {
 		if err != nil {
 			return nil, err
 		}
-		lines, casting, err := loadValidatedScript(ws, in.ScriptPath, in.CastingPath)
+		lines, casting, err := loadValidatedScript(ws, d.WorkDir, in.ScriptPath, in.CastingPath)
 		if err != nil {
 			return nil, err
 		}
@@ -105,9 +106,12 @@ func registerSynthesizeScript(srv *mcpserver.Server, d *Deps) {
 // loadValidatedScript parses the script file and fully validates it against
 // the casting table. Every problem is reported at once so the agent can fix
 // the inputs in a single pass.
-func loadValidatedScript(ws *workspace.Workspace, scriptPath, castingPath string) ([]script.Line, *script.Casting, error) {
+func loadValidatedScript(ws *workspace.Workspace, wd workdir.Resolver, scriptPath, castingPath string) ([]script.Line, *script.Casting, error) {
 	sp, err := ws.ResolveInside(scriptPath)
 	if err != nil {
+		return nil, nil, err
+	}
+	if err := refused(ws, wd, sp); err != nil {
 		return nil, nil, err
 	}
 	raw, err := ws.ReadFile(sp)
@@ -126,7 +130,7 @@ func loadValidatedScript(ws *workspace.Workspace, scriptPath, castingPath string
 		return nil, nil, toolerr.New(toolerr.CodeInvalidScript, "script contains no lines")
 	}
 
-	casting, err := loadCasting(ws, castingPath)
+	casting, err := loadCasting(ws, wd, castingPath)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -137,12 +141,15 @@ func loadValidatedScript(ws *workspace.Workspace, scriptPath, castingPath string
 }
 
 // loadCasting reads and parses the casting table through workspace containment.
-func loadCasting(ws *workspace.Workspace, castingPath string) (*script.Casting, error) {
+func loadCasting(ws *workspace.Workspace, wd workdir.Resolver, castingPath string) (*script.Casting, error) {
 	if castingPath == "" {
 		castingPath = defaultCastingPath
 	}
 	cp, err := ws.ResolveInside(castingPath)
 	if err != nil {
+		return nil, err
+	}
+	if err := refused(ws, wd, cp); err != nil {
 		return nil, err
 	}
 	raw, err := ws.ReadFile(cp)
@@ -154,4 +161,20 @@ func loadCasting(ws *workspace.Workspace, castingPath string) (*script.Casting, 
 			"read casting table %s: %v", castingPath, err)
 	}
 	return script.ParseCasting(raw, castingPath)
+}
+
+// refused judges a file the caller named in the workspace — the floor,
+// pathguard's Local policy with this server's own directories — before
+// anything reads it or asks whether it is there. The workspace passed
+// CheckBeneath, but it may contain such a place (a .env, this server's config
+// directory, the file a link in ~/.ssh leads to), and read as a script or a
+// casting table it would come back in a parse error; "not found" against
+// "refused" would say which of them exist. Every caller-named read goes
+// through here: the script and the casting table.
+func refused(ws *workspace.Workspace, wd workdir.Resolver, rel string) error {
+	abs := ws.Path(rel)
+	if why := wd.LocalPath(abs, abs); why != "" {
+		return toolerr.Newf(toolerr.CodePathNotAllowed, "%q is refused: %s", rel, why)
+	}
+	return nil
 }
