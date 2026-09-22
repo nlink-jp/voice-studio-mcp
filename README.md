@@ -221,12 +221,16 @@ refused with `work_dir_denied`, subdirectories included, under any spelling
 ([nlink-jp/pathguard](https://github.com/nlink-jp/pathguard) makes that
 judgement). The work directory is yours; ours is not a workspace.
 
-A `script_path` or `casting_path` that is a `.env`, lies in this server's
-config directory, or is where a link inside a credential directory points is
-refused with `path_not_allowed` before anything reads it — whether or not the
-file is there, with the same answer either way. A workspace can contain such a
-place (one inside a sync folder that `~/.ssh/config` links into), and read as
-a script its contents would come back in a parse error.
+Every file the server reads from a workspace — the script, the casting table,
+the line WAVs `master` joins — is judged first: one that is a `.env`, lies in
+this server's config directory, or is where a link directly inside a
+credential directory points is refused with `path_not_allowed` (a refused WAV
+counts as missing) before anything reads it — whether or not the file is
+there, with the same answer either way. A workspace can contain such a place
+(one inside a sync folder that `~/.ssh/config` links into), and read as a
+script its contents would come back in a parse error. Two spellings still get
+past it — a name in another Unicode normalisation and a hard link; the limits
+are listed in [ADR-0014](docs/en/adr/0014-pathguard.md).
 
 ```
 <work_dir>/<workspace_id>/

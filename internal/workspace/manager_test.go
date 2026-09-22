@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestEnsureCreatesLayout(t *testing.T) {
-	m := NewManager(allowAll)
+	m := NewManager(allowAll, noFloor)
 	w, err := m.EnsureUnder(t.TempDir(), "ep01")
 	if err != nil {
 		t.Fatalf("ensure: %v", err)
@@ -29,14 +30,14 @@ func TestEnsureCreatesLayout(t *testing.T) {
 }
 
 func TestEnsureRejectsBadID(t *testing.T) {
-	m := NewManager(allowAll)
+	m := NewManager(allowAll, noFloor)
 	if _, err := m.EnsureUnder(t.TempDir(), "../evil"); !errors.Is(err, ErrInvalidID) {
 		t.Errorf("expected invalid_workspace_id, got %v", err)
 	}
 }
 
 func TestResolveInside(t *testing.T) {
-	m := NewManager(allowAll)
+	m := NewManager(allowAll, noFloor)
 	w, err := m.EnsureUnder(t.TempDir(), "ws")
 	if err != nil {
 		t.Fatal(err)
@@ -71,7 +72,7 @@ func TestResolveInside(t *testing.T) {
 // validated; what it still owns is the workspace id and the refusal to invent
 // the parent (organization ADR-021 §4).
 func TestEnsureUnderValidation(t *testing.T) {
-	m := NewManager(allowAll)
+	m := NewManager(allowAll, noFloor)
 	if _, err := m.EnsureUnder("relative/path", "ep1"); err == nil {
 		t.Error("a relative work_dir must be refused")
 	}
@@ -85,7 +86,7 @@ func TestEnsureUnderValidation(t *testing.T) {
 }
 
 func TestRootHelpersRoundTrip(t *testing.T) {
-	m := NewManager(allowAll)
+	m := NewManager(allowAll, noFloor)
 	w, err := m.EnsureUnder(t.TempDir(), "io")
 	if err != nil {
 		t.Fatal(err)
@@ -121,7 +122,7 @@ func TestSymlinkContainment(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	m := NewManager(allowAll)
+	m := NewManager(allowAll, noFloor)
 	w, err := m.EnsureUnder(t.TempDir(), "evil")
 	if err != nil {
 		t.Fatal(err)
@@ -165,7 +166,7 @@ func TestSymlinkContainment(t *testing.T) {
 // scribes and image-forge were fixed then; this server — which shares a workspace with video-studio-mcp — was not.
 func TestAMissingFileNamesThePathItLookedFor(t *testing.T) {
 	workDir := t.TempDir()
-	m := NewManager(allowAll)
+	m := NewManager(allowAll, noFloor)
 	w, err := m.EnsureUnder(workDir, "drama")
 	if err != nil {
 		t.Fatal(err)
@@ -214,7 +215,7 @@ func TestEnsureRefusesLinkedWorkspaceDir(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	w, err := NewManager(allowAll).EnsureUnder(workDir, "ep1")
+	w, err := NewManager(allowAll, noFloor).EnsureUnder(workDir, "ep1")
 	if err == nil {
 		t.Fatalf("a linked workspace dir was accepted: base=%s", w.BaseDir)
 	}
@@ -250,7 +251,7 @@ func TestEnsureUnderJudgesTheWorkspaceDirectoryBeforeMakingIt(t *testing.T) {
 	work := t.TempDir()
 	refusal := errors.New("refused")
 	var seen string
-	m := NewManager(func(dir string) error { seen = dir; return refusal })
+	m := NewManager(func(dir string) error { seen = dir; return refusal }, noFloor)
 	if _, err := m.EnsureUnder(work, "gh"); !errors.Is(err, refusal) {
 		t.Fatalf("EnsureUnder = %v, want the check's refusal", err)
 	}
@@ -260,9 +261,61 @@ func TestEnsureUnderJudgesTheWorkspaceDirectoryBeforeMakingIt(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(work, "gh")); !os.IsNotExist(err) {
 		t.Errorf("a refused workspace was created (stat: %v)", err)
 	}
-	for name, m := range map[string]*Manager{"no check": NewManager(nil), "zero": {}} {
+	for name, m := range map[string]*Manager{"no check": NewManager(nil, noFloor), "zero": {}} {
 		if _, err := m.EnsureUnder(work, "ws"); err == nil {
 			t.Errorf("%s: EnsureUnder succeeded", name)
 		}
+	}
+}
+
+// noFloor stands for the server's floor in tests of the manager's own
+// mechanics; the floor itself is workdir.Resolver.LocalPath's.
+func noFloor(string, string) string { return "" }
+
+// Every read through a workspace — ReadFile, Stat, VerifyRegular — is judged
+// by the floor before anything is read or looked for: a path the floor refuses
+// gets the same refusal whether or not a file is there, and it names the path
+// only as given. A Manager without a floor refuses every workspace.
+func TestEveryReadIsJudgedBeforeItLooks(t *testing.T) {
+	work := t.TempDir()
+	floor := func(raw, _ string) string {
+		if strings.HasSuffix(raw, ".secret") {
+			return "a test floor refuses it"
+		}
+		return ""
+	}
+	w, err := NewManager(allowAll, floor).EnsureUnder(work, "ws")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rel := filepath.Join(DirWav, "1.secret")
+	reads := map[string]func() error{
+		"ReadFile":      func() error { _, err := w.ReadFile(rel); return err },
+		"Stat":          func() error { _, err := w.Stat(rel); return err },
+		"VerifyRegular": func() error { return w.VerifyRegular(rel) },
+	}
+	for name, read := range reads {
+		if err := os.WriteFile(w.Path(rel), []byte("SECRET"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		e := read()
+		if err := os.Remove(w.Path(rel)); err != nil {
+			t.Fatal(err)
+		}
+		m := read()
+		if !errors.Is(e, toolerr.New(toolerr.CodePathNotAllowed, "")) || e.Error() != fmt.Sprint(m) {
+			t.Errorf("%s: existing %v, missing %v; want the same path_not_allowed", name, e, m)
+		}
+	}
+	if _, err := w.ReadFile(filepath.Join(DirWav, "ok.wav")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("an ordinary missing file: %v, want not found", err)
+	}
+	for name, m := range map[string]*Manager{"no floor": NewManager(allowAll, nil)} {
+		if _, err := m.EnsureUnder(work, "ws2"); err == nil {
+			t.Errorf("%s: EnsureUnder succeeded", name)
+		}
+	}
+	if _, err := (&Workspace{ID: "x", BaseDir: w.BaseDir}).ReadFile("script/a.jsonl"); !errors.Is(err, toolerr.New(toolerr.CodePathNotAllowed, "")) {
+		t.Errorf("a Workspace without a floor read: %v", err)
 	}
 }

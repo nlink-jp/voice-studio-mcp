@@ -48,7 +48,7 @@ func newHarness(t *testing.T) *testHarness {
 			Cfg:           cfg.Synthesis,
 			EngineVersion: "1.1.0-mock",
 		},
-		WS:      workspace.NewManager(resolver.CheckBeneath),
+		WS:      workspace.NewManager(resolver.CheckBeneath, resolver.LocalPath),
 		WorkDir: resolver,
 		Logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}

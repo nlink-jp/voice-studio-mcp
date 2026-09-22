@@ -67,7 +67,7 @@ func registerMaster(srv *mcpserver.Server, d *Deps) {
 		if err != nil {
 			return nil, err
 		}
-		lines, casting, err := loadValidatedScript(ws, d.WorkDir, in.ScriptPath, in.CastingPath)
+		lines, casting, err := loadValidatedScript(ws, in.ScriptPath, in.CastingPath)
 		if err != nil {
 			return nil, err
 		}

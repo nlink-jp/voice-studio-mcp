@@ -46,7 +46,7 @@ var testCastingTable = &script.Casting{Characters: map[string]script.CastEntry{
 // the given lines.
 func seed(t *testing.T, lines []script.Line) *workspace.Workspace {
 	t.Helper()
-	ws, err := workspace.NewManager(func(string) error { return nil }).EnsureUnder(t.TempDir(), "ep1")
+	ws, err := workspace.NewManager(func(string) error { return nil }, func(string, string) string { return "" }).EnsureUnder(t.TempDir(), "ep1")
 	if err != nil {
 		t.Fatal(err)
 	}

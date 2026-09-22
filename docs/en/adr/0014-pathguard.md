@@ -61,7 +61,7 @@ review found it. `workspace.NewManager(check)` takes the judgement as a required
 v0.2.0) before making or using it; `newToolDeps` wires it. A Manager without one refuses every
 workspace. pathguard v0.2.0 also refuses a path holding a NUL byte.
 
-## Amendment (2026-09-22, v0.6.1): judge a file the caller names before reading it
+## Amendment (2026-09-22, v0.6.1): judge every file the workspace reads before reading it
 
 `script_path` and `casting_path` are workspace-relative and read through the `os.Root`, but the floor
 was not applied to them. A workspace passes `CheckBeneath` and can still contain places on the floor (a
@@ -73,20 +73,35 @@ slack-mcp-extender and chrome-pilot-mcp found, measured here with the home direc
 temporary one (12 of 20 pairs; the 8 planted links out of the workspace were refused by the `os.Root`
 whether or not their targets existed).
 
-- `refused` (internal/tools/synthesize_script.go) judges the file it will read (`ws.Path(rel)`) by
-  pathguard's Local policy with this server's own directories before `ws.ReadFile`, in
-  `loadValidatedScript` and `loadCasting`, which every tool goes through. pathguard follows the links
-  on the path itself, so no separate placement is needed.
+- The workspace judges every read — `ReadFile`, `Stat`, `VerifyRegular` — before it reads or looks
+  (`Workspace.judge`, internal/workspace/manager.go), by pathguard's Local policy with this server's
+  own directories. `workspace.NewManager(check, floor)` takes the floor as a required argument
+  (`workdir.Resolver.LocalPath`; a Manager without one refuses every workspace), and a Workspace built
+  without one refuses every read. pathguard follows the links on the path itself, so no separate
+  placement is needed; the refusal names the path only as given.
+- A first version judged `script_path` and `casting_path` in the tools. Its independent review found a
+  third read that skipped it: `master` reads `wav/<id>.wav` for every line, and a link planted there
+  reached a place on the floor inside the workspace ("not a RIFF/WAVE stream (36 bytes)" when present,
+  `missing_line_ids` when absent; the synth cache's `cached` count likewise). Three reads, one of them
+  missed, is a class: the judgement moved into the one place every read goes through. A refused
+  `wav/<id>.wav` now counts as missing, the same answer as no file.
 - `TestExistenceIsNotRevealed` calls `synthesize_script`, `synthesize_line` and `master` with the
   same path while a file is there and after it is removed, compares the whole answer and checks that
-  no contents come back. Four mutations (no floor, the script unjudged, the casting table unjudged,
-  judged after reading) all fail by assertion.
-- Known limits, all in pathguard and recorded for its next release:
+  none of the file's contents comes back (it cannot see a read that leaves the answer unchanged).
+  `TestMasterDoesNotReadAFloorFileThroughAWav` pins the wav case, and
+  `TestEveryReadIsJudgedBeforeItLooks` (internal/workspace) each of the three reads and a Manager or
+  Workspace without a floor. Six mutations (no floor, each read unjudged, a Manager without a floor
+  accepted, the floor not handed to the workspace) all fail by assertion.
+- Known limits in pathguard, recorded for its next release:
   - `work_dir` is validated by pathguard/workdir in the order organization ADR-022 §4 sets (not found
     before denied), so a `work_dir` naming a credential directory is answered by whether it exists.
   - A link target with a non-ASCII name spelled in another Unicode normalisation is found by identity
-    only while it exists (pathguard does not normalise), and so is a hard link to a credential file
-    made elsewhere. Whoever can make a hard link already reaches the file.
+    only while it exists (pathguard does not normalise). A hard link made elsewhere is refused only when
+    it is to a file that is itself a place on the floor (`~/.netrc`, `~/.docker/config.json`, …), and
+    only while it exists; one to a file inside a credential directory (`~/.ssh/id_rsa`) or to a `.env`
+    is not refused at all — a directory is compared by its own identity, not by its files'.
+- The judgement and the read are two steps, and a link swapped in between them is followed: a
+  check-to-use race, not closed here (closing it means judging what was opened, by its descriptor).
 
 ## References
 

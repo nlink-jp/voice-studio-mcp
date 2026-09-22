@@ -46,7 +46,7 @@ func newToolDeps(cfg *config.Config, client *engine.Client, engineVersion string
 			Cfg:           cfg.Synthesis,
 			EngineVersion: engineVersion,
 		},
-		WS:      workspace.NewManager(wd.CheckBeneath),
+		WS:      workspace.NewManager(wd.CheckBeneath, wd.LocalPath),
 		WorkDir: wd,
 		Logger:  logger,
 	}

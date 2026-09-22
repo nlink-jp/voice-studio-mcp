@@ -93,18 +93,20 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
   against `<real work_dir>/<id>`; a mismatch is refused. The comparison is the
   load-bearing half — the root-based mkdir alone cannot help a path that later
   leaves the process.
-- **A file the caller names is judged before it is read.** `script_path` and
-  `casting_path` go through `refused` (internal/tools/synthesize_script.go) —
-  pathguard's Local policy with this server's own directories, via
-  `workdir.Resolver.LocalPath` — before `ws.ReadFile`, in
-  `loadValidatedScript` and `loadCasting`, which every tool uses. A workspace
-  passes `CheckBeneath` but can still contain a `.env`, this server's config
-  directory or the file a link in `~/.ssh` leads to; read as a script, its
-  contents came back in a parse error (`unknown keys: [SECRET]`), and "not
-  found" against the parse error said whether it exists (ADR-0014, amendment
-  v0.6.1). A new caller-named read goes through `refused` too.
-  `TestExistenceIsNotRevealed` compares the whole answer for a path with and
-  without its file; four mutations are caught by assertion.
+- **The workspace judges every read.** `Workspace.ReadFile`, `Stat` and
+  `VerifyRegular` call `judge` first — pathguard's Local policy with this
+  server's own directories, the `floor` that `workspace.NewManager(check,
+  floor)` requires (`workdir.Resolver.LocalPath`; nil refuses every workspace,
+  and a Workspace literal without one refuses every read). A workspace passes
+  `CheckBeneath` but can still contain a `.env`, this server's config directory
+  or the file a link in `~/.ssh` leads to; a first fix judged only
+  `script_path` and `casting_path`, and its review found `master` reading
+  `wav/<id>.wav` through a planted link (ADR-0014, amendment v0.6.1). Do not
+  add a read that bypasses these three, and do not judge at call sites instead.
+  `TestEveryReadIsJudgedBeforeItLooks`, `TestExistenceIsNotRevealed` and
+  `TestMasterDoesNotReadAFloorFileThroughAWav` pin it; six mutations are
+  caught by assertion. Writes are not judged (a planted directory link can
+  steer one inside the workspace).
 - **The mastered file is cleared through the root before the spawn** — ffmpeg
   opens the output path itself and would follow a symlink planted at
   `master/<name>.<format>`, overwriting the link's target. `Build` calls

@@ -55,7 +55,7 @@ gem-agent・lagent と同じものを 1 つ持つ。
 `workdir.Resolver.CheckBeneath`（pathguard v0.2.0）で判定する。配線は `newToolDeps`。判定の無い Manager はすべての
 ワークスペースを拒む。pathguard v0.2.0 は NUL バイトを含むパスも拒む。
 
-## Amendment (2026-09-22, v0.6.1): 呼び出し側が名指すファイルを読む前に判定する
+## Amendment (2026-09-22, v0.6.1): ワークスペースが読むファイルはすべて読む前に判定する
 
 `script_path` と `casting_path` はワークスペース相対で `os.Root` 越しに読むが、床には掛けていなかった。ワークスペースは
 `CheckBeneath` を通っても床の場所を含み得る（`.env`、このサーバーの設定ディレクトリ、`~/.ssh` 内のリンクが同期フォルダを
@@ -64,18 +64,30 @@ gem-agent・lagent と同じものを 1 つ持つ。
 独立レビューで見つかった「存在で答えが変わる」型を、HOME を一時ディレクトリにしたテストで実測して見つけた（20 組中 12 組。
 仕掛けたリンクで外へ出る 8 組は `os.Root` が存在に関係なく拒んでいた）。
 
-- `refused`（internal/tools/synthesize_script.go）が、読むファイル（`ws.Path(rel)`）を pathguard の Local 方針とこの
-  サーバー自身のディレクトリで判定してから `ws.ReadFile` する。`loadValidatedScript` と `loadCasting` の 2 か所で、
-  すべてのツールがそれを通る。pathguard がパス上のリンクを自分で辿るので、置き場所を別に求める必要は無い。
+- ワークスペースは、読む前・探す前にすべての読み取り（`ReadFile`・`Stat`・`VerifyRegular`）を判定する
+  （`Workspace.judge`、internal/workspace/manager.go）—— pathguard の Local 方針とこのサーバー自身のディレクトリ。
+  `workspace.NewManager(check, floor)` は床を必須の引数として受け取り（`workdir.Resolver.LocalPath`。無い Manager は
+  すべてのワークスペースを拒む）、床の無い Workspace はすべての読み取りを拒む。pathguard がパス上のリンクを自分で
+  辿るので置き場所を別に求める必要は無く、拒否は渡されたとおりのパスだけを名指す。
+- 最初の版はツール側で `script_path` と `casting_path` を判定した。その独立レビューが、判定を通らない 3 つ目の
+  読み取りを見つけた: `master` は台本の各行の `wav/<id>.wav` を読み、そこに仕掛けたリンクがワークスペース内の床の場所に
+  届いた（あれば「not a RIFF/WAVE stream (36 bytes)」、無ければ `missing_line_ids`。合成キャッシュの `cached` 数も同様）。
+  3 つの読み取りのうち 1 つが漏れたのはクラスなので、判定をすべての読み取りが通る 1 か所へ移した。拒まれた
+  `wav/<id>.wav` は、ファイルが無いときと同じく「無い」と数える。
 - `TestExistenceIsNotRevealed` は、同じパスをファイルがある状態と消した状態で `synthesize_script`・`synthesize_line`・
-  `master` を呼び、答え全体を比べ、中身が出ないことを確かめる。4 つの変異（床を外す・台本の判定を外す・キャスティングの
-  判定を外す・読んでから判定する）はすべてアサーションで落ちた。
-- 既知の限界（いずれも pathguard 側。次のリリースに向けて記録）:
+  `master` を呼び、答え全体を比べ、ファイルの中身が一切出ないことを確かめる（答えを変えない読み取りは見えない）。
+  `TestMasterDoesNotReadAFloorFileThroughAWav` が wav の場合を、`TestEveryReadIsJudgedBeforeItLooks`
+  （internal/workspace）が 3 つの読み取りそれぞれと、床の無い Manager・Workspace を固定する。6 つの変異（床を外す・
+  各読み取りの判定を外す・床の無い Manager を受け入れる・床をワークスペースへ渡さない）はすべてアサーションで落ちた。
+- pathguard 側の既知の限界（次のリリースに向けて記録）:
   - `work_dir` は pathguard/workdir が組織 ADR-022 §4 の順序（not found が denied より先）で検証するので、資格情報の
     ディレクトリを指す `work_dir` は、存在するかどうかで答えが変わる。
   - 非 ASCII 名のリンク先を別の Unicode 正規化で綴ると、同一性で拒むのはそれが存在するときだけになる（pathguard は
-    正規化しない）。別の場所に作った資格情報ファイルへのハードリンクも同じ。ハードリンクを作れる者はすでにそのファイルに
-    届いている。
+    正規化しない）。別の場所に作ったハードリンクを拒むのは、床の場所そのものであるファイル（`~/.netrc`、
+    `~/.docker/config.json` など）へのものだけで、それも存在するときだけ。資格情報ディレクトリの中のファイル
+    （`~/.ssh/id_rsa`）や `.env` へのハードリンクは拒まない —— ディレクトリはそれ自身の同一性で比べ、中のファイルでは比べない。
+- 判定と読み取りは 2 段で、その間にすり替えたリンクは辿られる（check-to-use の競合。ここでは閉じていない。閉じるには、
+  開いたものを記述子から判定する必要がある）。
 
 ## References
 

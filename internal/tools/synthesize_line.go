@@ -7,7 +7,6 @@ import (
 	"github.com/nlink-jp/voice-studio-mcp/internal/mcpserver"
 	"github.com/nlink-jp/voice-studio-mcp/internal/script"
 	"github.com/nlink-jp/voice-studio-mcp/internal/synth"
-	"github.com/nlink-jp/voice-studio-mcp/internal/workdir"
 	"github.com/nlink-jp/voice-studio-mcp/internal/workspace"
 )
 
@@ -72,7 +71,7 @@ func registerSynthesizeLine(srv *mcpserver.Server, d *Deps) {
 		if err := in.Line.Validate(); err != nil {
 			return nil, err
 		}
-		res, err := resolveLine(ws, d.WorkDir, in.Line, in.CastingPath, in.StyleID)
+		res, err := resolveLine(ws, in.Line, in.CastingPath, in.StyleID)
 		if err != nil {
 			return nil, err
 		}
@@ -86,13 +85,13 @@ func registerSynthesizeLine(srv *mcpserver.Server, d *Deps) {
 
 // resolveLine maps a line to a style id: an explicit style_id wins (voice
 // auditioning), otherwise the casting table decides.
-func resolveLine(ws *workspace.Workspace, wd workdir.Resolver, line script.Line, castingPath string, styleID *int) (synth.Resolved, error) {
+func resolveLine(ws *workspace.Workspace, line script.Line, castingPath string, styleID *int) (synth.Resolved, error) {
 	if styleID != nil {
 		// No speaker UUID in this path; the global style id alone keys the
 		// cache correctly because style ids are unique across models.
 		return synth.Resolved{StyleID: *styleID}, nil
 	}
-	casting, err := loadCasting(ws, wd, castingPath)
+	casting, err := loadCasting(ws, castingPath)
 	if err != nil {
 		return synth.Resolved{}, err
 	}

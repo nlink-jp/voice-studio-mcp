@@ -45,6 +45,30 @@ const (
 type Workspace struct {
 	ID      string
 	BaseDir string
+	// floor judges a file before it is read (Manager.floor); a Workspace
+	// without one refuses every read.
+	floor func(raw, resolved string) string
+}
+
+// judge refuses a file the floor refuses — pathguard's Local policy with this
+// server's own directories — before anything reads it or asks whether it is
+// there. The workspace passed CheckBeneath, but it may contain such a place: a
+// .env, this server's config directory, the file a link in ~/.ssh leads to.
+// Read as a script or a casting table its contents came back in a parse error,
+// and a link planted at wav/<id>.wav reached one through master; "not found"
+// against either said which of them exist. Every read below goes through
+// here, so a new caller of the workspace cannot skip it. pathguard follows the
+// links on the path itself. The refusal names the path only as given.
+func (w *Workspace) judge(rel string) error {
+	if w.floor == nil {
+		return toolerr.New(toolerr.CodePathNotAllowed,
+			"this server's read check was not set up (workspace.NewManager)")
+	}
+	abs := w.Path(rel)
+	if why := w.floor(abs, abs); why != "" {
+		return toolerr.Newf(toolerr.CodePathNotAllowed, "%q is refused: %s", rel, why)
+	}
+	return nil
 }
 
 // Path joins parts under the workspace base directory. Use it for DISPLAY
@@ -111,6 +135,9 @@ func (w *Workspace) rootErr(op, rel string, err error) error {
 
 // ReadFile reads a workspace-relative file with symlink containment.
 func (w *Workspace) ReadFile(rel string) ([]byte, error) {
+	if err := w.judge(rel); err != nil {
+		return nil, err
+	}
 	r, err := w.openRoot()
 	if err != nil {
 		return nil, err
@@ -151,6 +178,9 @@ func (w *Workspace) WriteFileAtomic(rel string, data []byte) error {
 
 // Stat stats a workspace-relative path with symlink containment.
 func (w *Workspace) Stat(rel string) (fs.FileInfo, error) {
+	if err := w.judge(rel); err != nil {
+		return nil, err
+	}
 	r, err := w.openRoot()
 	if err != nil {
 		return nil, err
@@ -185,6 +215,9 @@ func (w *Workspace) RemoveAll(rel string) error {
 // process (ffmpeg) that cannot inherit os.Root. The remaining check-to-spawn
 // race is accepted under the local single-user threat model (ADR-0010).
 func (w *Workspace) VerifyRegular(rel string) error {
+	if err := w.judge(rel); err != nil {
+		return err
+	}
 	r, err := w.openRoot()
 	if err != nil {
 		return err
@@ -207,14 +240,19 @@ func (w *Workspace) VerifyRegular(rel string) error {
 // ADR-0013).
 type Manager struct {
 	check func(dir string) error
+	floor func(raw, resolved string) string
 }
 
 // NewManager returns a Manager. check judges <work_dir>/<workspace_id> — the
 // directory actually used — before it is made or used: validating work_dir
 // alone let work_dir=~/.config with workspace_id=gh land in ~/.config/gh. It
 // is workdir.Resolver.CheckBeneath in the server; a Manager without one
-// refuses every workspace.
-func NewManager(check func(dir string) error) *Manager { return &Manager{check: check} }
+// refuses every workspace. floor judges every file a workspace reads, before
+// it is read (Workspace.judge); it is workdir.Resolver.LocalPath in the
+// server, and a Manager without one refuses every workspace too.
+func NewManager(check func(dir string) error, floor func(raw, resolved string) string) *Manager {
+	return &Manager{check: check, floor: floor}
+}
 
 // EnsureUnder materializes <workDir>/<id> and its subdirectories (idempotent).
 // workDir must be an absolute path to an existing directory the caller can read
@@ -226,7 +264,7 @@ func (m *Manager) EnsureUnder(workDir, id string) (*Workspace, error) {
 			"work_dir %q must be an absolute path", workDir)
 	}
 	root := filepath.Clean(workDir)
-	if m == nil || m.check == nil {
+	if m == nil || m.check == nil || m.floor == nil {
 		return nil, toolerr.New(toolerr.CodeWorkDirDenied,
 			"this server's workspace check was not set up (workspace.NewManager)")
 	}
@@ -243,7 +281,7 @@ func (m *Manager) ensureUnder(root, id string) (*Workspace, error) {
 	if err := makeWorkspaceDir(root, id); err != nil {
 		return nil, err
 	}
-	w := &Workspace{ID: id, BaseDir: filepath.Join(root, id)}
+	w := &Workspace{ID: id, BaseDir: filepath.Join(root, id), floor: m.floor}
 	for _, d := range []string{DirScript, DirDict, DirWav, DirCache, DirMaster} {
 		if err := w.MkdirAll(d); err != nil {
 			return nil, err

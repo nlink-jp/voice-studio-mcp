@@ -21,7 +21,7 @@ func newSynth(t *testing.T) (*synth.Synthesizer, *enginetest.Mock, *workspace.Wo
 	t.Helper()
 	mock := enginetest.New()
 	t.Cleanup(mock.Close)
-	ws, err := workspace.NewManager(func(string) error { return nil }).EnsureUnder(t.TempDir(), "test")
+	ws, err := workspace.NewManager(func(string) error { return nil }, func(string, string) string { return "" }).EnsureUnder(t.TempDir(), "test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +252,7 @@ func TestParseWAV(t *testing.T) {
 }
 
 func TestCacheStoreRoundTrip(t *testing.T) {
-	ws, err := workspace.NewManager(func(string) error { return nil }).EnsureUnder(t.TempDir(), "cache-rt")
+	ws, err := workspace.NewManager(func(string) error { return nil }, func(string, string) string { return "" }).EnsureUnder(t.TempDir(), "cache-rt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -286,7 +286,7 @@ func TestCacheStoreRoundTrip(t *testing.T) {
 }
 
 func TestCacheStoreCorruptIndexStartsFresh(t *testing.T) {
-	ws, err := workspace.NewManager(func(string) error { return nil }).EnsureUnder(t.TempDir(), "cache-corrupt")
+	ws, err := workspace.NewManager(func(string) error { return nil }, func(string, string) string { return "" }).EnsureUnder(t.TempDir(), "cache-corrupt")
 	if err != nil {
 		t.Fatal(err)
 	}
