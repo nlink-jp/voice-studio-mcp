@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-09-22
+
+### Security
+
+- **Every file the server reads from a workspace is judged before it is
+  read.** A script or casting table that is a `.env`, lies in this server's
+  config directory, or is where a link directly inside a credential directory
+  points (a workspace can contain each) was read: its contents came back in
+  the parse error (`unknown keys: [SECRET]`, `invalid character 'S'`), and the
+  answer differed from the one for a missing file. A link planted at
+  `wav/<id>.wav` reached such a file through `master` too. Each is now refused
+  with `path_not_allowed` — a refused line WAV counts as missing — the same
+  answer whether or not the file is there (ADR-0014, amendment).
+- A link planted at `dict/words.json` or `cache/index.json` to a JSON file on
+  the floor is no longer loaded and written back into the workspace as an
+  ordinary file.
+
+### Changed
+
+- Every read is judged, a path once per step (a queued job judges again): a
+  300-line `master`, or the reply to a cached 300-line `synthesize_script`,
+  spends about 0.6 s more on it, and the job as much again.
+
 ## [0.6.0] - 2026-09-22
 
 ### Changed
