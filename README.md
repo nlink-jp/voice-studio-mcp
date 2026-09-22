@@ -217,8 +217,9 @@ is one you may not be able to open.
 A `work_dir` naming a system location, your home directory itself, a
 credential or agent-control location (`~/.ssh`, `~/.aws`, `~/.claude`, …) or
 **this server's own config directory (`~/.config/voice-studio-mcp`)** is
-refused with `work_dir_denied`, subdirectories included. The work directory is
-yours; ours is not a workspace.
+refused with `work_dir_denied`, subdirectories included, under any spelling
+([nlink-jp/pathguard](https://github.com/nlink-jp/pathguard) makes that
+judgement). The work directory is yours; ours is not a workspace.
 
 ```
 <work_dir>/<workspace_id>/

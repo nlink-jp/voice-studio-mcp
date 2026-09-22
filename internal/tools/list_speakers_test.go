@@ -16,6 +16,7 @@ import (
 	"github.com/nlink-jp/voice-studio-mcp/internal/mcpserver"
 	"github.com/nlink-jp/voice-studio-mcp/internal/synth"
 	"github.com/nlink-jp/voice-studio-mcp/internal/transport"
+	"github.com/nlink-jp/voice-studio-mcp/internal/workdir"
 	"github.com/nlink-jp/voice-studio-mcp/internal/workspace"
 )
 
@@ -46,8 +47,9 @@ func newHarness(t *testing.T) *testHarness {
 			Cfg:           cfg.Synthesis,
 			EngineVersion: "1.1.0-mock",
 		},
-		WS:     workspace.NewManager(),
-		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		WS:      workspace.NewManager(),
+		WorkDir: workdir.NewResolver(t.TempDir()),
+		Logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
 	return &testHarness{t: t, deps: deps, mock: mock, root: root}
 }

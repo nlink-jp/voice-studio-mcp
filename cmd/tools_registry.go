@@ -61,7 +61,7 @@ func newToolDeps(cfg *config.Config, client *engine.Client, engineVersion string
 // rewriting our own configuration as if it were a workspace, on a model's
 // say-so.
 func workDirResolver() workdir.Resolver {
-	return workdir.Resolver{Denied: serverOwnedDirs()}
+	return workdir.NewResolver(serverOwnedDirs()...)
 }
 
 // serverOwnedDirs lists this server's own config and state directories.
@@ -69,13 +69,11 @@ func workDirResolver() workdir.Resolver {
 // There is one: the config directory. This server keeps no state on disk —
 // every byte it produces goes under the caller's `work_dir`, and the
 // `~/.voice-studio` default root that used to exist was deleted when ADR-021
-// was adopted. If a state directory is ever reintroduced it belongs here.
+// was adopted. If a state directory is ever reintroduced it belongs here. An
+// empty one (no home) is passed on, and refuses every call rather than
+// protecting nothing.
 func serverOwnedDirs() []string {
-	dir := configDir()
-	if dir == "" {
-		return nil
-	}
-	return []string{dir}
+	return []string{configDir()}
 }
 
 // configDir is where this server keeps its own config.toml.

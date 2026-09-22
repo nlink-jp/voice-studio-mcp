@@ -1,6 +1,7 @@
 # ADR-0013: work dir は呼び出しごとの `work_dir`、既定ルートは持たない
 
-- **Status**: Accepted (2026-09-13)
+- **Status**: Accepted (2026-09-13) —— その実装（work dir の検査）は [ADR-0014](0014-pathguard.ja.md)
+  （nlink-jp/pathguard）で置き換えた
 - **Amends**: [ADR-0010](0010-agent-prepared-workspaces.ja.md)（agent-prepared workspaces）
 
 ## 背景

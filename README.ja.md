@@ -218,7 +218,8 @@ style_id = 933744512
 システム領域、ホームディレクトリそのもの、資格情報/エージェント制御の
 場所(`~/.ssh`、`~/.aws`、`~/.claude` など)、および**このサーバー自身の
 設定ディレクトリ(`~/.config/voice-studio-mcp`)**を `work_dir` に指定した
-呼び出しは、サブディレクトリを含めて `work_dir_denied` で拒否します。
+呼び出しは、サブディレクトリを含め、どんな綴りで渡しても `work_dir_denied` で拒否します
+(判定は [nlink-jp/pathguard](https://github.com/nlink-jp/pathguard) が行います)。
 work_dir は呼び出し側のものであり、サーバー自身のディレクトリは
 ワークスペースではありません。
 

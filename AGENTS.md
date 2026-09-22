@@ -101,15 +101,21 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
 - **Voice-model licenses are data, not code** — `[[speaker_metadata]]`
   in config and `license_checked` in casting.toml; `master` warns on
   unverified models and generates the credits file.
+- **The path judgement is nlink-jp/pathguard's, not this repository's.**
+  `internal/workdir` only takes `_meta` from the context and carries
+  pathguard's errors onto `toolerr` (ADR-0014). Do not add a location list or a
+  name comparison here; a fix to the judgement is a pathguard release and a
+  dependency bump.
 - **`workdir.Resolver` is built in exactly one place** — `workDirResolver()`
-  in `cmd/tools_registry.go`, reached only through `newToolDeps`. Its `Denied`
-  list carries this server's own directories (organization ADR-021 §4), which
-  today is `configDir()` = `~/.config/voice-studio-mcp`; `resolveConfig`
+  in `cmd/tools_registry.go`, reached only through `newToolDeps`, with
+  `workdir.NewResolver(serverOwnedDirs()...)`. Those are this server's own
+  directories (organization ADR-021 §4), which today is
+  `configDir()` = `~/.config/voice-studio-mcp`; `resolveConfig`
   searches that same expression so the denial cannot drift from the location.
   There is no state directory — every byte produced goes under the caller's
-  `work_dir`. Add one and it belongs in `serverOwnedDirs()`. Do not write
-  `workdir.Resolver{}` in a tool: an empty `Denied` is a resolver that lets a
-  caller point us at our own configuration.
+  `work_dir`. Add one and it belongs in `serverOwnedDirs()`. A zero
+  `workdir.Resolver{}` refuses every call, and so does an empty server
+  directory — tests build one with `workdir.NewResolver(t.TempDir())`.
 
 ## ADR cheat sheet
 

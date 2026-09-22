@@ -28,8 +28,9 @@ type Deps struct {
 	Synth  *synth.Synthesizer
 	WS     *workspace.Manager
 	// WorkDir resolves and validates the per-call work directory: the
-	// argument, then the request's _meta, then an error. The zero value
-	// works (organization ADR-021).
+	// argument, then the request's _meta, then an error (organization
+	// ADR-021). Build it with workdir.NewResolver; the zero value refuses
+	// every call.
 	WorkDir workdir.Resolver
 	Jobs    *job.Manager
 	// JobCtx is the server-lifetime context batch jobs run under; tying jobs
