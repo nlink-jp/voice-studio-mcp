@@ -16,6 +16,14 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   real-engine tests keep the user's `HOME`, where AivisSpeech Engine finds its
   voice models.
 
+### Internal
+
+- The dormant Linux packaging path (`PLATFORMS` lists darwin/arm64 only, so
+  no Linux archive has been published) archives with `COPYFILE_DISABLE=1 tar
+  --no-xattrs`, and `make verify-release` judges any Linux archive `PLATFORMS`
+  lists: no AppleDouble or other macOS metadata members, no extended attributes
+  as pax headers, and exactly the canonical binary, `README.md` and `LICENSE`.
+
 ## [0.6.2] - 2026-09-22
 
 ### Security
