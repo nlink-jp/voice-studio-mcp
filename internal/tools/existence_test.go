@@ -1,11 +1,15 @@
 package tools
 
 import (
+	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/nlink-jp/voice-studio-mcp/internal/job"
 	"github.com/nlink-jp/voice-studio-mcp/internal/workdir"
 	"github.com/nlink-jp/voice-studio-mcp/internal/workspace"
 )
@@ -239,5 +243,91 @@ func TestServerNamedFilesAreJudged(t *testing.T) {
 	}
 	if strings.Contains(string(b), "SECRETWORD") {
 		t.Errorf("the planted record's contents were written into the workspace: %s", b)
+	}
+}
+
+// A job runs after the call that queued it, behind other jobs; what the call
+// judged is not remembered for it. Here the reply finds line 1's WAV cached, a
+// held job slot keeps the job waiting, the WAV is swapped for a link to a place
+// on the floor, and the job must not count it as cached — whether or not the
+// file behind the link is there.
+func TestAJobJudgesAfresh(t *testing.T) {
+	base := realDir(t, t.TempDir())
+	home := filepath.Join(base, "home")
+	t.Setenv("HOME", home)
+	work := filepath.Join(base, "sync")
+	ws := filepath.Join(work, "ws")
+	mkdirAll(t, filepath.Join(home, ".ssh"))
+	target := filepath.Join(ws, "ssh_config.wav")
+	symlink(t, target, filepath.Join(home, ".ssh", "config"))
+	writeFileAt(t, filepath.Join(ws, "casting.toml"), testCasting)
+	writeFileAt(t, filepath.Join(ws, "ok.jsonl"), `{"id":1,"speaker":"narrator","text":"テスト"}`+"\n")
+
+	h := newHarness(t)
+	h.deps.WorkDir = workdir.NewResolver(filepath.Join(base, "server"))
+	h.deps.WS = workspace.NewManager(h.deps.WorkDir.CheckBeneath, h.deps.WorkDir.LocalPath)
+	h.deps.Jobs = job.NewManager(1)
+	args := map[string]any{"work_dir": work, "workspace_id": "ws", "script_path": "ok.jsonl"}
+	if _, jo := h.runScriptJob(args); jo.State != "done" {
+		t.Fatalf("first synthesis: %+v", jo)
+	}
+	wav := filepath.Join(ws, "wav", "1.wav")
+	for _, present := range []bool{true, false} {
+		release := make(chan struct{})
+		h.deps.Jobs.Submit(context.Background(), ws, []job.Item{{LineID: 0, Run: func(context.Context) (bool, error) {
+			<-release
+			return false, nil
+		}}})
+		so, jo := func() (scriptOut, jobOut) {
+			body, isErr := h.callTool("synthesize_script", args)
+			if isErr {
+				t.Fatalf("synthesize_script: %s", body)
+			}
+			var so scriptOut
+			if err := json.Unmarshal(body, &so); err != nil {
+				t.Fatal(err)
+			}
+			// The reply has judged the real WAV; now swap it while the job waits.
+			if err := os.Remove(wav); err != nil {
+				t.Fatal(err)
+			}
+			symlink(t, filepath.Join("..", "ssh_config.wav"), wav)
+			if present {
+				writeFileAt(t, target, "RIFF-not-really")
+			} else {
+				_ = os.Remove(target)
+			}
+			close(release)
+			return so, h.awaitJob(so.JobID)
+		}()
+		if so.Cached != 1 {
+			t.Fatalf("the reply found %d cached, want 1 (the real WAV)", so.Cached)
+		}
+		if jo.Cached != 0 {
+			t.Errorf("file behind the link present=%v: the job counted %d cached, want 0", present, jo.Cached)
+		}
+	}
+}
+
+// awaitJob polls check_job until the job is no longer running.
+func (h *testHarness) awaitJob(id string) jobOut {
+	h.t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		jb, isErr := h.callTool("check_job", map[string]any{"job_id": id})
+		if isErr {
+			h.t.Fatalf("check_job: %s", jb)
+		}
+		var jo jobOut
+		if err := json.Unmarshal(jb, &jo); err != nil {
+			h.t.Fatal(err)
+		}
+		if jo.State != "running" {
+			return jo
+		}
+		if time.Now().After(deadline) {
+			h.t.Fatalf("job stuck: %+v", jo)
+		}
+		time.Sleep(5 * time.Millisecond)
 	}
 }

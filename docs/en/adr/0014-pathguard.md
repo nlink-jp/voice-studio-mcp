@@ -87,9 +87,12 @@ whether or not their targets existed).
   `wav/<id>.wav` now counts as missing, the same answer as no file. It also closed a leak nobody had
   named: a link planted at `dict/words.json` or `cache/index.json` to a JSON file on the floor was
   loaded and saved back into the workspace as an ordinary file the caller could read.
-- Cost: one judgement is a walk of the credential directories (about 2.5 ms here), and a Workspace —
-  one tool call — remembers its answer per path, so a line's WAV read and then verified is judged
-  once. `master` over 300 lines went from about 0.10 s to 0.75 s with a fake ffmpeg, and a cached
+- Cost: one judgement is a walk of the credential directories (about 2.5 ms here), and a Workspace
+  remembers its answer per path, so a line's WAV read and then verified in one step is judged once. A
+  job runs after the call that queued it, possibly behind other jobs, so it takes a `Fresh` workspace
+  that remembers nothing: its first memo version reused the call's answers, and a WAV swapped for a
+  link while the job waited counted as cached when the file behind it existed (the narrow review of
+  the memo found it). `master` over 300 lines went from about 0.10 s to 0.75 s with a fake ffmpeg, and a cached
   `synthesize_script` re-run of 300 lines from 0.09 s to 0.72 s (measured 2026-09-22); a real ffmpeg
   pass over that much audio takes far longer. A check prepared once per call belongs in pathguard.
 - ffmpeg reads the concat list and the chapter metadata the server writes just before spawning it;
@@ -101,10 +104,11 @@ whether or not their targets existed).
   `TestEveryReadIsJudgedBeforeItLooks` (internal/workspace) each of the three reads and a Manager or
   Workspace without a floor, `TestAPathIsJudgedOncePerWorkspace` the memo,
   `TestServerNamedFilesAreJudged` the cached count and the dictionary record through a planted link,
-  and `TestTheServersWorkspacesJudgeEveryRead` (cmd) the server's own wiring through `newToolDeps`.
-  Eleven mutations (no floor, each read unjudged, a Manager without a floor accepted, the floor not
-  handed to the workspace, the wiring's floor a no-op or nil, the memo remembering a pass for a
-  refusal or not remembering at all) all fail by assertion.
+  `TestTheServersWorkspacesJudgeEveryRead` (cmd) the server's own wiring through `newToolDeps`, and
+  `TestAJobJudgesAfresh` a job that waits while a WAV is swapped. Twelve mutations (no floor, each of
+  the three reads unjudged, a Manager without a floor accepted, the floor not handed to the workspace,
+  the wiring's floor a no-op or nil, the memo remembering a pass for a refusal or not remembering at
+  all, the job reusing the call's workspace, `Fresh` keeping the memory) all fail by assertion.
 - Known limits in pathguard, recorded for its next release:
   - `work_dir` is validated by pathguard/workdir in the order organization ADR-022 §4 sets (not found
     before denied), so a `work_dir` naming a credential directory is answered by whether it exists.
@@ -115,6 +119,8 @@ whether or not their targets existed).
     is not refused at all — a directory is compared by its own identity, not by its files'.
 - The judgement and the read are two steps, and a link swapped in between them is followed: a
   check-to-use race, not closed here (closing it means judging what was opened, by its descriptor).
+  Within one step a path's answer is remembered, so a directory swapped for a link between a line's
+  read and its verification before ffmpeg is not judged again.
 
 ## References
 

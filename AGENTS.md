@@ -104,10 +104,13 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
   `wav/<id>.wav` through a planted link (ADR-0014, amendment v0.6.1). Do not
   add a read that bypasses these three, and do not judge at call sites instead.
   `TestEveryReadIsJudgedBeforeItLooks`, `TestExistenceIsNotRevealed` and
-  `TestMasterDoesNotReadAFloorFileThroughAWav` pin it; six mutations are
-  caught by assertion. A Workspace (one call) remembers each path's answer, so
-  a read-then-verify is judged once — a judgement costs about 2.5 ms, and
-  master over 300 lines went from ~0.10 s to ~0.75 s with a fake ffmpeg.
+  `TestMasterDoesNotReadAFloorFileThroughAWav` pin it; twelve mutations are
+  caught by assertion. A Workspace remembers each path's answer, so a
+  read-then-verify in one step is judged once — a judgement costs about 2.5 ms,
+  and master over 300 lines went from ~0.10 s to ~0.75 s with a fake ffmpeg.
+  Work that runs later (a job) takes `ws.Fresh()`, which remembers nothing:
+  reusing the call's answers let a WAV swapped while the job waited count as
+  cached (`TestAJobJudgesAfresh`).
   `TestTheServersWorkspacesJudgeEveryRead` (cmd) holds the wiring. Writes are
   not judged (a planted directory link can steer one inside the workspace).
 - **The mastered file is cleared through the root before the spawn** — ffmpeg

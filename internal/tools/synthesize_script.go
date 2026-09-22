@@ -62,6 +62,16 @@ func registerSynthesizeScript(srv *mcpserver.Server, d *Deps) {
 			return nil, err
 		}
 
+		// The job runs later — after other jobs, possibly — so it works on a
+		// Fresh workspace and a cache store of its own: what this call judged
+		// is not remembered for it, and a file swapped in between is judged
+		// again.
+		jobWS := ws.Fresh()
+		jobStore, err := synth.OpenCacheStore(jobWS)
+		if err != nil {
+			return nil, err
+		}
+
 		// Pre-count cache hits for the immediate response (pure lookups, no
 		// engine calls). The job re-checks per line, so the numbers stay
 		// consistent even if state changes in between.
@@ -80,7 +90,7 @@ func registerSynthesizeScript(srv *mcpserver.Server, d *Deps) {
 			}
 			ln := ln
 			items = append(items, job.Item{LineID: ln.ID, Run: func(ctx context.Context) (bool, error) {
-				r, err := d.Synth.SynthesizeLine(ctx, ws, store, ln, res, in.Force)
+				r, err := d.Synth.SynthesizeLine(ctx, jobWS, jobStore, ln, res, in.Force)
 				if err != nil {
 					return false, err
 				}

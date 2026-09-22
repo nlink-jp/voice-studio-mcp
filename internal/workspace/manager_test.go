@@ -320,7 +320,7 @@ func TestEveryReadIsJudgedBeforeItLooks(t *testing.T) {
 	}
 }
 
-// A path is judged once per Workspace — one tool call — however often it is
+// A path is judged once per Workspace — one step of work — however often it is
 // read: master reads each WAV and then verifies it, and every judgement walks
 // the credential directories.
 func TestAPathIsJudgedOncePerWorkspace(t *testing.T) {

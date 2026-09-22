@@ -49,11 +49,20 @@ type Workspace struct {
 	// floor judges a file before it is read (Manager.floor); a Workspace
 	// without one refuses every read.
 	floor func(raw, resolved string) string
-	// judged remembers the floor's answer per path for this Workspace, which
-	// lives for one tool call: master reads each line's WAV and then verifies
-	// it, and every check costs a walk of the credential directories.
+	// judged remembers the floor's answer per path for this Workspace, so a
+	// file read and then verified within one step is judged once: every check
+	// costs a walk of the credential directories. A Workspace must not outlive
+	// the step it was made for with its memory: work that runs later (a job)
+	// takes Fresh, which judges again.
 	mu     sync.Mutex
 	judged map[string]string
+}
+
+// Fresh returns the same workspace with nothing remembered, for work that
+// runs after the call that made it — a queued job. Its answers were given
+// then; a path swapped since must be judged again.
+func (w *Workspace) Fresh() *Workspace {
+	return &Workspace{ID: w.ID, BaseDir: w.BaseDir, floor: w.floor}
 }
 
 // judge refuses a file the floor refuses — pathguard's Local policy with this
