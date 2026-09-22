@@ -3,6 +3,7 @@ package master
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
@@ -93,60 +94,62 @@ func (m *Master) Build(ctx context.Context, ws *workspace.Workspace, scriptStem 
 		}
 	}
 
-	// 2. Prepare the tmp area (concat list, silences, chapters).
-	tmpRel := filepath.Join(workspace.DirMaster, "tmp")
-	if err := ws.RemoveAll(tmpRel); err != nil {
+	// 2. A private directory for everything ffmpeg writes and reads back:
+	// silences, the concat list, chapters, and the master until it is placed.
+	// The workspace is writable by the caller, and a list rewritten there while
+	// ffmpeg started — or a link planted where ffmpeg writes — steered it
+	// outside the workspace (measured, ADR-0014). ffmpeg reads only the line
+	// WAVs from the workspace, each as WAV only.
+	priv, err := os.MkdirTemp("", "voice-studio-master-")
+	if err != nil {
+		return Result{}, toolerr.Newf(toolerr.CodeWorkspaceFailed, "make a private master directory: %v", err)
+	}
+	defer func() { _ = os.RemoveAll(priv) }()
+	// An older version kept these under master/tmp; clear what it left.
+	if err := ws.RemoveAll(filepath.Join(workspace.DirMaster, "tmp")); err != nil {
 		return Result{}, toolerr.Newf(toolerr.CodeWorkspaceFailed, "clean master tmp: %v", err)
 	}
-	if err := ws.MkdirAll(tmpRel); err != nil {
-		return Result{}, err
-	}
 
-	// 3. One silence WAV per distinct pause duration (rendered by ffmpeg, so
-	// the output path is absolute; the parent tmp dir was just created by us).
-	silenceRels := map[int]string{}
+	// 3. One silence WAV per distinct pause duration.
+	silencePaths := map[int]string{}
 	for _, p := range pieces {
 		if p.pauseMS <= 0 {
 			continue
 		}
-		if _, ok := silenceRels[p.pauseMS]; ok {
+		if _, ok := silencePaths[p.pauseMS]; ok {
 			continue
 		}
-		rel := filepath.Join(tmpRel, fmt.Sprintf("silence_%d.wav", p.pauseMS))
-		if err := m.runFFmpeg(ctx, silenceArgs(rate, p.pauseMS, ws.Path(rel))); err != nil {
+		path := filepath.Join(priv, fmt.Sprintf("silence_%d.wav", p.pauseMS))
+		if err := m.runFFmpeg(ctx, silenceArgs(rate, p.pauseMS, path)); err != nil {
 			return Result{}, err
 		}
-		silenceRels[p.pauseMS] = rel
+		silencePaths[p.pauseMS] = path
 	}
 
 	// 4. Concat list in script order: line WAV, then its trailing silence.
-	// ffmpeg cannot inherit os.Root, so every input is re-verified as a real
-	// regular file immediately before the list is handed over (the remaining
-	// verify-to-spawn race is accepted per ADR-0010's threat model).
-	var concatRels []string
+	// ffmpeg cannot inherit os.Root, so every line WAV is re-verified as a real
+	// regular file immediately before the list is handed over; the list gives
+	// each entry "format_whitelist wav".
+	var concatPaths []string
 	totalMS := 0
 	for _, p := range pieces {
-		concatRels = append(concatRels, p.wavRel)
+		if err := ws.VerifyRegular(p.wavRel); err != nil {
+			return Result{}, err
+		}
+		concatPaths = append(concatPaths, ws.Path(p.wavRel))
 		totalMS += int(p.info.DurationSeconds * 1000)
 		if p.pauseMS > 0 {
-			concatRels = append(concatRels, silenceRels[p.pauseMS])
+			concatPaths = append(concatPaths, silencePaths[p.pauseMS])
 			totalMS += p.pauseMS
 		}
 	}
-	concatPaths := make([]string, 0, len(concatRels))
-	for _, rel := range concatRels {
-		if err := ws.VerifyRegular(rel); err != nil {
-			return Result{}, err
-		}
-		concatPaths = append(concatPaths, ws.Path(rel))
-	}
-	listRel := filepath.Join(tmpRel, "concat.txt")
 	list, err := concatList(concatPaths)
 	if err != nil {
 		return Result{}, toolerr.New(toolerr.CodePathNotAllowed, err.Error())
 	}
-	if err := ws.WriteFileAtomic(listRel, []byte(list)); err != nil {
-		return Result{}, err
+	listPath := filepath.Join(priv, "concat.txt")
+	if err := os.WriteFile(listPath, []byte(list), 0o600); err != nil {
+		return Result{}, toolerr.Newf(toolerr.CodeWorkspaceFailed, "write concat list: %v", err)
 	}
 
 	// 5. Chapters from scene boundaries (m4b only).
@@ -155,36 +158,33 @@ func (m *Master) Build(ctx context.Context, ws *workspace.Workspace, scriptStem 
 	if opts.Format == "m4b" && opts.Chapters {
 		chs := sceneChapters(pieces)
 		chapters = len(chs)
-		metadataRel := filepath.Join(tmpRel, "ffmetadata.txt")
-		if err := ws.WriteFileAtomic(metadataRel, []byte(ffmetadata(chs))); err != nil {
-			return Result{}, err
+		metadataPath = filepath.Join(priv, "ffmetadata.txt")
+		if err := os.WriteFile(metadataPath, []byte(ffmetadata(chs)), 0o600); err != nil {
+			return Result{}, toolerr.Newf(toolerr.CodeWorkspaceFailed, "write chapters: %v", err)
 		}
-		metadataPath = ws.Path(metadataRel)
 	}
 
-	// 6. Final encode.
+	// 6. Final encode into the private directory; then the master is placed in
+	// the workspace through its root, replacing whatever is at
+	// master/<name>.<format> rather than writing through it.
 	name := opts.OutputName
 	if name == "" {
 		name = scriptStem
 	}
 	outRel := filepath.Join(workspace.DirMaster, name+"."+opts.Format)
-	// ffmpeg cannot inherit os.Root: it opens the output path itself, so a
-	// symlink planted at master/<name>.<format> would be followed and the
-	// link's target overwritten with the master. Clear the path through the
-	// workspace root first — a root-based remove unlinks the link, never what
-	// it points at — so ffmpeg always creates the file fresh.
-	if err := ws.RemoveAll(outRel); err != nil {
-		return Result{}, err
-	}
-	outPath := ws.Path(outRel)
 	ln := Loudnorm{I: m.Cfg.LoudnormI, TP: m.Cfg.LoudnormTP, LRA: m.Cfg.LoudnormLRA}
 	bitrate := m.Cfg.MP3Bitrate
 	if opts.Format == "m4b" {
 		bitrate = m.Cfg.M4BBitrate
 	}
-	if err := m.runFFmpeg(ctx, concatArgs(ws.Path(listRel), metadataPath, opts.Format, outPath, ln, bitrate)); err != nil {
+	rendered := filepath.Join(priv, "master."+opts.Format)
+	if err := m.runFFmpeg(ctx, concatArgs(listPath, metadataPath, opts.Format, rendered, ln, bitrate)); err != nil {
 		return Result{}, err
 	}
+	if err := ws.PlaceFile(outRel, rendered); err != nil {
+		return Result{}, err
+	}
+	outPath := ws.Path(outRel)
 
 	// 7. Credits from the characters actually used.
 	credits, unverified := collectCredits(lines, casting)

@@ -57,7 +57,11 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
   interface (fake in tests); silence dedupe, ffmetadata chapters, credits.
   The concat list is ffconcat with `option format_whitelist wav` on every
   entry, and the list input reads `file` only — a line WAV replaced by an
-  ffconcat list was followed outside the workspace (ADR-0014, v0.6.2)
+  ffconcat list was followed outside the workspace (ADR-0014, v0.6.2), and
+  `-xerror` fails a refused entry. Silences, the list, chapters and the master
+  are made in a private directory (`os.MkdirTemp`), and only the master is
+  placed through the workspace root (`Workspace.PlaceFile`): a list in the
+  workspace was rewritten mid-render 10 of 10 times
 - `e2e/` — `//go:build e2e` harness spawning the built binary
 
 ## Gotchas

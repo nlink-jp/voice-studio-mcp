@@ -8,14 +8,22 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Security
 
-- **A line WAV replaced by an ffconcat list was followed.** The concat list is
-  now ffconcat with `option format_whitelist wav` on every entry, and the list
-  input reads the `file` protocol only, so a replaced entry fails instead of
-  leading ffmpeg outside the workspace (measured with ffmpeg 9.0.2).
+- **Files in the workspace could steer ffmpeg outside it.** A line WAV replaced
+  by an ffconcat list naming an in-workspace link put the outside file into the
+  master, and a caller writing into the workspace during a render could rewrite
+  the concat list (10 of 10 runs) or plant a link where ffmpeg wrote the master
+  (measured with ffmpeg 9.0.2). Silences, the concat list, chapters and the
+  master are now made in a private directory outside the workspace, and only
+  the master is placed in the workspace through its root (a link at its name is
+  replaced, not followed). Each list entry is read as WAV only, over the `file`
+  protocol only, and a refused entry fails the master (`-xerror`) instead of
+  cutting it short.
 - A path holding a control character is no longer written into the concat list.
 
 ### Changed
 
+- Nothing is left under `master/tmp`; an older version's leftovers there are
+  removed.
 - nlink-jp/pathguard v0.3.0.
 
 ## [0.6.1] - 2026-09-22

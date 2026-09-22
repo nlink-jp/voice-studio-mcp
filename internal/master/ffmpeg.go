@@ -37,6 +37,7 @@ func silenceArgs(rate, durationMS int, outPath string) []string {
 func concatArgs(listPath, metadataPath, format, outPath string, ln Loudnorm, bitrate string) []string {
 	args := []string{
 		"-y",
+		"-xerror", // a refused entry fails the master rather than truncating it
 		"-f", "concat",
 		"-safe", "0",
 		"-protocol_whitelist", "file",

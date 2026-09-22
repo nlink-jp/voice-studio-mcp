@@ -23,10 +23,24 @@ type fakeRunner struct {
 	failAt   int // 1-based index of the call that should fail; 0 = never
 	exitCode int
 	stderr   string
+	// inputs holds the text of every file an ffmpeg call read with -i, keyed
+	// by base name, as it was at the call — the master works in a private
+	// directory that is gone afterwards.
+	inputs map[string]string
 }
 
 func (f *fakeRunner) Run(ctx context.Context, name string, args []string) ([]byte, []byte, int, error) {
 	f.cmds = append(f.cmds, append([]string{name}, args...))
+	for i := 0; i+1 < len(args); i++ {
+		if args[i] == "-i" {
+			if b, err := os.ReadFile(args[i+1]); err == nil {
+				if f.inputs == nil {
+					f.inputs = map[string]string{}
+				}
+				f.inputs[filepath.Base(args[i+1])] = string(b)
+			}
+		}
+	}
 	if f.failAt > 0 && len(f.cmds) == f.failAt {
 		return nil, []byte(f.stderr), f.exitCode, errors.New("exit status")
 	}
@@ -100,7 +114,7 @@ func TestBuildMP3(t *testing.T) {
 		t.Errorf("silence args: %s", silence)
 	}
 	final := strings.Join(fr.cmds[1], " ")
-	for _, want := range []string{"-f concat", "-safe 0", "loudnorm=I=-18:TP=-1.5:LRA=11", "-c:a libmp3lame", "-b:a 192k", "ep1.mp3"} {
+	for _, want := range []string{"-f concat", "-safe 0", "loudnorm=I=-18:TP=-1.5:LRA=11", "-c:a libmp3lame", "-b:a 192k"} {
 		if !strings.Contains(final, want) {
 			t.Errorf("final args missing %q: %s", want, final)
 		}
@@ -109,10 +123,15 @@ func TestBuildMP3(t *testing.T) {
 		t.Errorf("mp3 must not reference chapter metadata: %s", final)
 	}
 
+	// The master was placed in the workspace.
+	if fi, err := os.Lstat(ws.Path(workspace.DirMaster, "ep1.mp3")); err != nil || !fi.Mode().IsRegular() {
+		t.Errorf("master not placed as a regular file: %v %v", fi, err)
+	}
+
 	// Concat list interleaves audio and silences in script order.
-	list, err := os.ReadFile(ws.Path(workspace.DirMaster, "tmp", "concat.txt"))
-	if err != nil {
-		t.Fatal(err)
+	list, ok := fr.inputs["concat.txt"]
+	if !ok {
+		t.Fatal("the final call read no concat list")
 	}
 	var entries []string // the file lines; each is followed by its format option
 	for _, line := range strings.Split(strings.TrimSpace(string(list)), "\n") {
@@ -158,18 +177,17 @@ func TestBuildM4BWithChapters(t *testing.T) {
 		t.Errorf("result: %+v", res)
 	}
 	final := strings.Join(fr.cmds[len(fr.cmds)-1], " ")
-	for _, want := range []string{"-map_metadata 1", "-c:a aac", "-b:a 128k", "-f ipod", "ep1.m4b"} {
+	for _, want := range []string{"-map_metadata 1", "-c:a aac", "-b:a 128k", "-f ipod"} {
 		if !strings.Contains(final, want) {
 			t.Errorf("final args missing %q: %s", want, final)
 		}
 	}
 
 	// Chapter times: scene 1 = 1000+800+1000 = 2800ms, scene 2 = 1000+800.
-	meta, err := os.ReadFile(ws.Path(workspace.DirMaster, "tmp", "ffmetadata.txt"))
-	if err != nil {
-		t.Fatal(err)
+	s, ok := fr.inputs["ffmetadata.txt"]
+	if !ok {
+		t.Fatal("the final call read no chapters")
 	}
-	s := string(meta)
 	for _, want := range []string{";FFMETADATA1", "TIMEBASE=1/1000", "START=0", "END=2800", "START=2800", "END=4600", "title=Scene 1", "title=Scene 2"} {
 		if !strings.Contains(s, want) {
 			t.Errorf("ffmetadata missing %q:\n%s", want, s)
@@ -255,8 +273,13 @@ func TestConcatEntriesAreReadAsWAVOnly(t *testing.T) {
 	if got != want {
 		t.Errorf("concat list = %q, want %q", got, want)
 	}
-	if args := strings.Join(concatArgs("/w/list.txt", "", "mp3", "/w/o.mp3", Loudnorm{}, "128k"), " "); !strings.Contains(args, "-protocol_whitelist file -i /w/list.txt") {
+	args := strings.Join(concatArgs("/w/list.txt", "", "mp3", "/w/o.mp3", Loudnorm{}, "128k"), " ")
+	if !strings.Contains(args, "-protocol_whitelist file -i /w/list.txt") {
 		t.Errorf("concat input does not limit protocols: %s", args)
+	}
+	// A refused entry must fail the master, not truncate it silently.
+	if !strings.Contains(args, "-xerror") {
+		t.Errorf("concat does not exit on an error: %s", args)
 	}
 }
 
@@ -317,5 +340,54 @@ func TestBuildDoesNotFollowLinkedOutput(t *testing.T) {
 	}
 	if !fi.Mode().IsRegular() {
 		t.Errorf("master is not a regular file (mode %s): the link survived the encode", fi.Mode())
+	}
+}
+
+// Everything ffmpeg writes and reads back — silences, the concat list,
+// chapters, the master until it is placed — is in a private directory outside
+// the workspace (ADR-0014): no ffmpeg argument names a workspace path; the
+// line WAVs reach it only through the list, each as WAV only.
+func TestTheMasterIsMadeOutsideTheWorkspace(t *testing.T) {
+	ws := seed(t, testLines)
+	fr := &fakeRunner{}
+	if _, err := newMaster(fr).Build(context.Background(), ws, "ep1", testLines, testCastingTable, Options{Format: "m4b", Chapters: true}); err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	for _, cmd := range fr.cmds {
+		for _, a := range cmd {
+			if strings.HasPrefix(a, ws.BaseDir) {
+				t.Errorf("ffmpeg is handed a workspace path: %s in %v", a, cmd)
+			}
+		}
+	}
+	if _, err := os.Stat(ws.Path(workspace.DirMaster, "tmp")); err == nil {
+		t.Error("master/tmp exists")
+	}
+	if !strings.Contains(fr.inputs["concat.txt"], ws.Path("wav")) {
+		t.Errorf("the list does not name the line WAVs: %q", fr.inputs["concat.txt"])
+	}
+}
+
+// A link planted where the master goes is replaced, not written through.
+func TestALinkPlantedAtTheMasterIsReplacedNotWrittenThrough(t *testing.T) {
+	ws := seed(t, testLines)
+	outside := filepath.Join(t.TempDir(), "victim.txt")
+	if err := os.WriteFile(outside, []byte("keep me"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(ws.Path(workspace.DirMaster), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, ws.Path(workspace.DirMaster, "ep1.mp3")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := newMaster(&fakeRunner{}).Build(context.Background(), ws, "ep1", testLines, testCastingTable, Options{Format: "mp3"}); err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	if b, _ := os.ReadFile(outside); string(b) != "keep me" {
+		t.Errorf("the link's target was overwritten: %q", b)
+	}
+	if fi, err := os.Lstat(ws.Path(workspace.DirMaster, "ep1.mp3")); err != nil || !fi.Mode().IsRegular() {
+		t.Errorf("master/ep1.mp3 is not a regular file: %v %v", fi, err)
 	}
 }

@@ -123,17 +123,21 @@ whether or not their targets existed).
   Within one step a path's answer is remembered, so a directory swapped for a link between a line's
   read and its verification before ffmpeg is not judged again.
 
-## Amendment (2026-09-22, v0.6.2): each concat entry is read as WAV only
+## Amendment (2026-09-22, v0.6.2): what ffmpeg writes and reads back moves out of the workspace; each entry is WAV only
 
 - **Measured** (ffmpeg 9.0.2, fake files in a scratch directory): with a line WAV in the workspace replaced by a file
   holding `ffconcat version 1.0\nfile 'k'` (k an in-workspace link leading outside), ffmpeg followed it through the
-  concat list and the outside file's audio went into the output. A whitelist (concat,wav) on the list input as a whole
-  does not stop it: an entry can still be read as a concat list.
-- **Fixed:** the concat list is written in the ffconcat form with `option format_whitelist wav` on each entry (a
-  crafted entry fails to open; a concat of ordinary and silence WAVs still works, measured). The list input reads the
-  `file` protocol only. A path holding a control character is not written into the list.
-- The swap between the judgement and the read (above) stays an accepted residual (the operator's rule: an overall
-  risk assessment rather than perfection). pathguard is at v0.3.0 (no behaviour change for this server).
+  concat list and the outside file's audio went into the output. The independent review then measured a caller
+  rewriting the workspace's concat list during a render making the outside file the output in 10 of 10 runs
+  (ffmpeg's startup is tens of milliseconds).
+- **Fixed:** silence WAVs, the concat list, chapters, and the master until it is placed live in a private directory
+  outside the workspace under an unguessable name (0700); only the master is placed, through `os.Root`, under a
+  temporary name and then renamed (a link at its name is replaced, not followed). The concat list is ffconcat with
+  `option format_whitelist wav` on every entry, reads the `file` protocol only, and `-xerror` fails the master on a
+  refused entry instead of writing a short one. A path holding a control character is not written into the list.
+- **Accepted residual** (the operator's rule: an overall risk assessment rather than perfection): a line WAV swapped
+  for a link to outside between its judgement and ffmpeg's open can be read — only an outside file that parses as WAV.
+  pathguard is at v0.3.0 (no behaviour change for this server).
 
 ## References
 
