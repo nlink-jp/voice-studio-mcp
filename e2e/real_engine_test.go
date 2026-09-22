@@ -4,7 +4,6 @@ package e2e
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -25,20 +24,13 @@ func TestE2E_RealEngine(t *testing.T) {
 		return
 	}
 
-	root := t.TempDir()
-	configPath := filepath.Join(root, "config.toml")
-	cfg := fmt.Sprintf(`
-[workspace]
-workspace_dir = %q
-
-[engine]
-mode = "managed"
-`, filepath.Join(root, "workspaces"))
-	if err := os.WriteFile(configPath, []byte(cfg), 0o644); err != nil {
+	configPath := filepath.Join(t.TempDir(), "config.toml")
+	if err := os.WriteFile(configPath, []byte("[engine]\nmode = \"managed\"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	workDir := t.TempDir() // the work_dir the call names (ADR-0013)
 
-	h := Start(t, binary, configPath)
+	h := StartWithUserHome(t, binary, configPath)
 	// serve answers initialize only after the engine is ready; a cold engine
 	// (first model load) can take minutes.
 	if err := h.InitializeWithTimeout(4 * time.Minute); err != nil {
@@ -69,6 +61,7 @@ mode = "managed"
 
 	// Synthesize one real line via style override (no casting table needed).
 	body, isErr, err = h.CallTool("synthesize_line", map[string]any{
+		"work_dir":     workDir,
 		"workspace_id": "real-engine-check",
 		"line":         map[string]any{"id": 1, "speaker": "check", "text": "音声合成の動作確認です。"},
 		"style_id":     styleID,

@@ -28,6 +28,8 @@ type Harness struct {
 	stdin  io.WriteCloser
 	lines  chan []byte
 	nextID atomic.Int64
+	// Home is the server's HOME when Start replaced it, empty otherwise.
+	Home string
 }
 
 // requireBinary locates the binary under test, skipping the test when it has
@@ -47,14 +49,37 @@ func requireBinary(t *testing.T) (string, bool) {
 	return "", false
 }
 
-// Start launches `binary serve --config configPath`.
+// Start launches `binary serve --config configPath` with HOME set to a fresh
+// temporary directory, so a run leaves nothing in the user's home: the master
+// makes its private directory under the user cache directory, which is under
+// $HOME.
 func Start(t *testing.T, binary, configPath string) *Harness {
+	t.Helper()
+	return start(t, binary, configPath, t.TempDir())
+}
+
+// StartWithUserHome launches the server with the user's own HOME. The real
+// engine needs it: managed mode starts AivisSpeech Engine with the server's
+// environment, and the engine reads the installed voice models from under the
+// home directory. A master run then leaves its (emptied) private directory in
+// the user cache directory.
+func StartWithUserHome(t *testing.T, binary, configPath string) *Harness {
+	t.Helper()
+	return start(t, binary, configPath, "")
+}
+
+// start launches the server; home replaces HOME (and XDG_CACHE_HOME, which
+// Linux's user cache directory follows first) unless it is empty.
+func start(t *testing.T, binary, configPath, home string) *Harness {
 	t.Helper()
 	args := []string{"serve"}
 	if configPath != "" {
 		args = append(args, "--config", configPath)
 	}
 	cmd := exec.Command(binary, args...)
+	if home != "" {
+		cmd.Env = append(os.Environ(), "HOME="+home, "XDG_CACHE_HOME="+filepath.Join(home, ".cache"))
+	}
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		t.Fatalf("stdin pipe: %v", err)
@@ -80,7 +105,7 @@ func Start(t *testing.T, binary, configPath string) *Harness {
 		}
 	}()
 
-	h := &Harness{t: t, cmd: cmd, stdin: stdin, lines: lines}
+	h := &Harness{t: t, cmd: cmd, stdin: stdin, lines: lines, Home: home}
 	t.Cleanup(h.Close)
 	return h
 }

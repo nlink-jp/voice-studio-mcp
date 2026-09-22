@@ -64,7 +64,11 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
   write; tests replace `privateRoot` in `TestMain`), and only the master is
   placed through the workspace root (`Workspace.PlaceFile`): a list in the
   workspace was rewritten mid-render 10 of 10 times
-- `e2e/` — `//go:build e2e` harness spawning the built binary
+- `e2e/` — `//go:build e2e` harness spawning the built binary. Every call
+  names `work_dir` (the config has no `[workspace]`: ADR-0013 refuses it at
+  load). `Start` gives the server a temporary `HOME` (the master's private
+  directory is under the user cache directory); `StartWithUserHome` is for the
+  real engine, which reads its installed voice models from under `HOME`.
 
 ## Gotchas
 

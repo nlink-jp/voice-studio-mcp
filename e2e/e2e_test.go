@@ -45,12 +45,13 @@ eval "out=\${$#}"
 exit 0
 `
 
-// setupEnv starts a mock engine and writes a full external-mode config plus
-// workspace inputs. It returns the config path and the workspace root.
-func setupEnv(t *testing.T, engineURL string) (configPath, wsRoot string) {
+// setupEnv writes a full external-mode config for the mock engine plus the
+// workspace inputs. It returns the config path and the work_dir every call
+// names; the workspace is <workDir>/ep1 (ADR-0013: the server owns no root).
+func setupEnv(t *testing.T, engineURL string) (configPath, workDir string) {
 	t.Helper()
 	root := t.TempDir()
-	wsRoot = filepath.Join(root, "workspaces")
+	workDir = filepath.Join(root, "work")
 
 	stub := filepath.Join(root, "ffmpeg-stub")
 	if err := os.WriteFile(stub, []byte(ffmpegStub), 0o755); err != nil {
@@ -59,9 +60,6 @@ func setupEnv(t *testing.T, engineURL string) (configPath, wsRoot string) {
 
 	configPath = filepath.Join(root, "config.toml")
 	cfg := fmt.Sprintf(`
-[workspace]
-workspace_dir = %q
-
 [engine]
 mode = "external"
 url = %q
@@ -76,13 +74,13 @@ name = "MockNarrator"
 license = "ACML 1.0"
 credit = "AivisSpeech:MockNarrator"
 commercial_use = true
-`, wsRoot, engineURL, stub)
+`, engineURL, stub)
 	if err := os.WriteFile(configPath, []byte(cfg), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	// Workspace inputs, as the agent would place them.
-	wsDir := filepath.Join(wsRoot, "ep1")
+	wsDir := filepath.Join(workDir, "ep1")
 	if err := os.MkdirAll(filepath.Join(wsDir, "script"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +90,7 @@ commercial_use = true
 	if err := os.WriteFile(filepath.Join(wsDir, "script", "ep1.jsonl"), []byte(scriptJSONL), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	return configPath, wsRoot
+	return configPath, workDir
 }
 
 func TestE2E_FullProductionFlow(t *testing.T) {
@@ -103,7 +101,7 @@ func TestE2E_FullProductionFlow(t *testing.T) {
 	mock := enginetest.New()
 	defer mock.Close()
 
-	configPath, wsRoot := setupEnv(t, mock.URL())
+	configPath, workDir := setupEnv(t, mock.URL())
 	h := Start(t, binary, configPath)
 	if err := h.Initialize(); err != nil {
 		t.Fatalf("initialize: %v", err)
@@ -133,6 +131,7 @@ func TestE2E_FullProductionFlow(t *testing.T) {
 
 	// 2. Pronunciation dictionary.
 	body, isErr, err = h.CallTool("register_dictionary", map[string]any{
+		"work_dir":     workDir,
 		"workspace_id": "ep1",
 		"words": []map[string]any{
 			{"surface": "美咲", "pronunciation": "ミサキ", "accent_type": 1, "word_type": "PROPER_NOUN"},
@@ -147,6 +146,7 @@ func TestE2E_FullProductionFlow(t *testing.T) {
 
 	// 3. Batch synthesis (async) + polling.
 	body, isErr, err = h.CallTool("synthesize_script", map[string]any{
+		"work_dir":     workDir,
 		"workspace_id": "ep1",
 		"script_path":  "script/ep1.jsonl",
 	}, 30*time.Second)
@@ -190,13 +190,14 @@ func TestE2E_FullProductionFlow(t *testing.T) {
 		t.Fatalf("job: %+v", jo)
 	}
 	for _, n := range []string{"1.wav", "2.wav", "3.wav"} {
-		if _, err := os.Stat(filepath.Join(wsRoot, "ep1", "wav", n)); err != nil {
+		if _, err := os.Stat(filepath.Join(workDir, "ep1", "wav", n)); err != nil {
 			t.Errorf("missing %s: %v", n, err)
 		}
 	}
 
 	// 4. Retake a single line.
 	body, isErr, err = h.CallTool("synthesize_line", map[string]any{
+		"work_dir":     workDir,
 		"workspace_id": "ep1",
 		"line":         map[string]any{"id": 2, "speaker": "美咲", "text": "……本当に、行くの?", "style": "悲しみ", "intensity": 1.8},
 	}, 15*time.Second)
@@ -209,6 +210,7 @@ func TestE2E_FullProductionFlow(t *testing.T) {
 
 	// 5. Master to m4b with chapters + credits.
 	body, isErr, err = h.CallTool("master", map[string]any{
+		"work_dir":     workDir,
 		"workspace_id": "ep1",
 		"script_path":  "script/ep1.jsonl",
 		"format":       "m4b",
@@ -234,6 +236,17 @@ func TestE2E_FullProductionFlow(t *testing.T) {
 	if _, err := os.Stat(mo.CreditsPath); err != nil {
 		t.Errorf("credits output: %v", err)
 	}
+	// The master made its private directory under the harness's HOME, not the
+	// user's: the run is hermetic (macOS: Library/Caches, Linux: .cache).
+	found := false
+	for _, cache := range []string{filepath.Join("Library", "Caches"), ".cache"} {
+		if _, err := os.Stat(filepath.Join(h.Home, cache, "voice-studio-mcp", "master")); err == nil {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("no voice-studio-mcp/master under the harness's HOME %s: the server used another cache directory", h.Home)
+	}
 }
 
 func TestE2E_StructuredErrors(t *testing.T) {
@@ -244,10 +257,10 @@ func TestE2E_StructuredErrors(t *testing.T) {
 	mock := enginetest.New()
 	defer mock.Close()
 
-	configPath, wsRoot := setupEnv(t, mock.URL())
+	configPath, workDir := setupEnv(t, mock.URL())
 	// Corrupt the script: duplicate id + missing text.
 	bad := `{"id":1,"speaker":"narrator","text":"ok"}` + "\n" + `{"id":1,"speaker":"narrator"}`
-	if err := os.WriteFile(filepath.Join(wsRoot, "ep1", "script", "bad.jsonl"), []byte(bad), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(workDir, "ep1", "script", "bad.jsonl"), []byte(bad), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -257,6 +270,7 @@ func TestE2E_StructuredErrors(t *testing.T) {
 	}
 
 	body, isErr, err := h.CallTool("synthesize_script", map[string]any{
+		"work_dir":     workDir,
 		"workspace_id": "ep1",
 		"script_path":  "script/bad.jsonl",
 	}, 15*time.Second)

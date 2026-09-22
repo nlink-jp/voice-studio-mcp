@@ -40,11 +40,19 @@ func TestE2E_RealEngineFullProduction(t *testing.T) {
 		t.Skip("ffmpeg not installed; master step needs it")
 	}
 
+	// workRoot is the work_dir every call names (ADR-0013); it must be absolute.
 	workRoot := os.Getenv("VOICE_STUDIO_TEST_WORK_DIR")
 	if workRoot == "" {
 		workRoot = t.TempDir()
-	} else if err := os.MkdirAll(workRoot, 0o755); err != nil {
-		t.Fatal(err)
+	} else {
+		abs, err := filepath.Abs(workRoot)
+		if err != nil {
+			t.Fatal(err)
+		}
+		workRoot = abs
+		if err := os.MkdirAll(workRoot, 0o755); err != nil {
+			t.Fatal(err)
+		}
 	}
 	wsID := "sim-drama"
 	wsDir := filepath.Join(workRoot, wsID)
@@ -55,12 +63,11 @@ func TestE2E_RealEngineFullProduction(t *testing.T) {
 	}
 
 	configPath := filepath.Join(t.TempDir(), "config.toml")
-	cfg := fmt.Sprintf("[workspace]\nworkspace_dir = %q\n\n[engine]\nmode = \"managed\"\n", workRoot)
-	if err := os.WriteFile(configPath, []byte(cfg), 0o644); err != nil {
+	if err := os.WriteFile(configPath, []byte("[engine]\nmode = \"managed\"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	h := Start(t, binary, configPath)
+	h := StartWithUserHome(t, binary, configPath)
 	if err := h.InitializeWithTimeout(4 * time.Minute); err != nil {
 		t.Fatalf("initialize: %v", err)
 	}
@@ -134,6 +141,7 @@ license_checked = true
 
 	// --- 3. Pronunciation dictionary (coined word) ---
 	body, isErr, err = h.CallTool("register_dictionary", map[string]any{
+		"work_dir":     workRoot,
 		"workspace_id": wsID,
 		"words": []map[string]any{
 			{"surface": "宵闇亭", "pronunciation": "ヨイヤミテイ", "accent_type": 3, "word_type": "PROPER_NOUN"},
@@ -147,6 +155,7 @@ license_checked = true
 
 	// --- 4. Batch synthesis ---
 	body, isErr, err = h.CallTool("synthesize_script", map[string]any{
+		"work_dir":     workRoot,
 		"workspace_id": wsID,
 		"script_path":  "script/yoiyami.jsonl",
 	}, 60*time.Second)
@@ -190,6 +199,7 @@ license_checked = true
 
 	// --- 5. Retake one line with stronger direction ---
 	body, isErr, err = h.CallTool("synthesize_line", map[string]any{
+		"work_dir":     workRoot,
 		"workspace_id": wsID,
 		"line": map[string]any{
 			"id": 4, "scene": 2, "speaker": "美咲",
@@ -206,6 +216,7 @@ license_checked = true
 	// --- 6. Master: mp3 and m4b with chapters (real ffmpeg) ---
 	for _, format := range []string{"mp3", "m4b"} {
 		body, isErr, err = h.CallTool("master", map[string]any{
+			"work_dir":     workRoot,
 			"workspace_id": wsID,
 			"script_path":  "script/yoiyami.jsonl",
 			"format":       format,

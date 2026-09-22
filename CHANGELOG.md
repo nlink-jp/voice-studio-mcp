@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Tests
+
+- `make test-e2e` runs again. The harness still wrote `[workspace]
+  workspace_dir`, which the server has refused at load since ADR-0013, so both
+  mock-engine tests failed at initialize. Every call now names `work_dir`, and
+  the spawned server gets a temporary `HOME`; the full flow checks that the
+  master's private directory landed there, not in the user's cache. The
+  real-engine tests keep the user's `HOME`, where AivisSpeech Engine finds its
+  voice models.
+
 ## [0.6.2] - 2026-09-22
 
 ### Security
