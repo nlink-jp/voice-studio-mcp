@@ -319,3 +319,25 @@ func TestEveryReadIsJudgedBeforeItLooks(t *testing.T) {
 		t.Errorf("a Workspace without a floor read: %v", err)
 	}
 }
+
+// A path is judged once per Workspace — one tool call — however often it is
+// read: master reads each WAV and then verifies it, and every judgement walks
+// the credential directories.
+func TestAPathIsJudgedOncePerWorkspace(t *testing.T) {
+	calls := 0
+	w, err := NewManager(allowAll, func(string, string) string { calls++; return "" }).EnsureUnder(t.TempDir(), "ws")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rel := filepath.Join(DirWav, "1.wav")
+	if err := os.WriteFile(w.Path(rel), []byte("RIFF"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	before := calls
+	_, _ = w.ReadFile(rel)
+	_ = w.VerifyRegular(rel)
+	_, _ = w.Stat(rel)
+	if got := calls - before; got != 1 {
+		t.Errorf("three reads of one path judged it %d times, want once", got)
+	}
+}

@@ -73,12 +73,23 @@ gem-agent・lagent と同じものを 1 つ持つ。
   読み取りを見つけた: `master` は台本の各行の `wav/<id>.wav` を読み、そこに仕掛けたリンクがワークスペース内の床の場所に
   届いた（あれば「not a RIFF/WAVE stream (36 bytes)」、無ければ `missing_line_ids`。合成キャッシュの `cached` 数も同様）。
   3 つの読み取りのうち 1 つが漏れたのはクラスなので、判定をすべての読み取りが通る 1 か所へ移した。拒まれた
-  `wav/<id>.wav` は、ファイルが無いときと同じく「無い」と数える。
+  `wav/<id>.wav` は、ファイルが無いときと同じく「無い」と数える。これで、誰も名指していなかった漏れも閉じた:
+  `dict/words.json` や `cache/index.json` に仕掛けた、床の上の JSON ファイルへのリンクは、読み込まれた上で、呼び出し側が
+  読める普通のファイルとしてワークスペースに書き戻されていた。
+- 費用: 判定 1 回は資格情報ディレクトリを一巡する（ここで約 2.5 ms）。Workspace（1 回のツール呼び出し）はパスごとに答えを
+  覚えるので、読んでから検証する行の WAV は 1 回だけ判定する。300 行の `master` は偽の ffmpeg で約 0.10 秒から 0.75 秒に、
+  300 行のキャッシュ済み `synthesize_script` の再実行は 0.09 秒から 0.72 秒になった（2026-09-22 実測）。本物の ffmpeg が
+  その量の音声にかける時間はずっと長い。呼び出しごとに 1 回だけ準備する判定は pathguard 側の仕事。
+- ffmpeg は、サーバーが起動直前に書く連結リストと章のメタデータを読む。この 2 つは判定しておらず、向きを変えるには
+  その間のすり替え（下の競合）が要る。
 - `TestExistenceIsNotRevealed` は、同じパスをファイルがある状態と消した状態で `synthesize_script`・`synthesize_line`・
   `master` を呼び、答え全体を比べ、ファイルの中身が一切出ないことを確かめる（答えを変えない読み取りは見えない）。
   `TestMasterDoesNotReadAFloorFileThroughAWav` が wav の場合を、`TestEveryReadIsJudgedBeforeItLooks`
-  （internal/workspace）が 3 つの読み取りそれぞれと、床の無い Manager・Workspace を固定する。6 つの変異（床を外す・
-  各読み取りの判定を外す・床の無い Manager を受け入れる・床をワークスペースへ渡さない）はすべてアサーションで落ちた。
+  （internal/workspace）が 3 つの読み取りそれぞれと、床の無い Manager・Workspace を、`TestAPathIsJudgedOncePerWorkspace` が
+  記憶を、`TestServerNamedFilesAreJudged` が仕掛けたリンク越しのキャッシュ数と辞書の記録を、
+  `TestTheServersWorkspacesJudgeEveryRead`（cmd）が `newToolDeps` を通したサーバー自身の配線を固定する。11 の変異
+  （床を外す・各読み取りの判定を外す・床の無い Manager を受け入れる・床をワークスペースへ渡さない・配線の床を空にするか
+  nil にする・記憶が拒否を通過として覚える・記憶しない）はすべてアサーションで落ちた。
 - pathguard 側の既知の限界（次のリリースに向けて記録）:
   - `work_dir` は pathguard/workdir が組織 ADR-022 §4 の順序（not found が denied より先）で検証するので、資格情報の
     ディレクトリを指す `work_dir` は、存在するかどうかで答えが変わる。

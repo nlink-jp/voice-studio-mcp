@@ -84,14 +84,27 @@ whether or not their targets existed).
   reached a place on the floor inside the workspace ("not a RIFF/WAVE stream (36 bytes)" when present,
   `missing_line_ids` when absent; the synth cache's `cached` count likewise). Three reads, one of them
   missed, is a class: the judgement moved into the one place every read goes through. A refused
-  `wav/<id>.wav` now counts as missing, the same answer as no file.
+  `wav/<id>.wav` now counts as missing, the same answer as no file. It also closed a leak nobody had
+  named: a link planted at `dict/words.json` or `cache/index.json` to a JSON file on the floor was
+  loaded and saved back into the workspace as an ordinary file the caller could read.
+- Cost: one judgement is a walk of the credential directories (about 2.5 ms here), and a Workspace —
+  one tool call — remembers its answer per path, so a line's WAV read and then verified is judged
+  once. `master` over 300 lines went from about 0.10 s to 0.75 s with a fake ffmpeg, and a cached
+  `synthesize_script` re-run of 300 lines from 0.09 s to 0.72 s (measured 2026-09-22); a real ffmpeg
+  pass over that much audio takes far longer. A check prepared once per call belongs in pathguard.
+- ffmpeg reads the concat list and the chapter metadata the server writes just before spawning it;
+  those two are not judged, and redirecting them needs a swap in between (the race below).
 - `TestExistenceIsNotRevealed` calls `synthesize_script`, `synthesize_line` and `master` with the
   same path while a file is there and after it is removed, compares the whole answer and checks that
   none of the file's contents comes back (it cannot see a read that leaves the answer unchanged).
   `TestMasterDoesNotReadAFloorFileThroughAWav` pins the wav case, and
   `TestEveryReadIsJudgedBeforeItLooks` (internal/workspace) each of the three reads and a Manager or
-  Workspace without a floor. Six mutations (no floor, each read unjudged, a Manager without a floor
-  accepted, the floor not handed to the workspace) all fail by assertion.
+  Workspace without a floor, `TestAPathIsJudgedOncePerWorkspace` the memo,
+  `TestServerNamedFilesAreJudged` the cached count and the dictionary record through a planted link,
+  and `TestTheServersWorkspacesJudgeEveryRead` (cmd) the server's own wiring through `newToolDeps`.
+  Eleven mutations (no floor, each read unjudged, a Manager without a floor accepted, the floor not
+  handed to the workspace, the wiring's floor a no-op or nil, the memo remembering a pass for a
+  refusal or not remembering at all) all fail by assertion.
 - Known limits in pathguard, recorded for its next release:
   - `work_dir` is validated by pathguard/workdir in the order organization ADR-022 §4 sets (not found
     before denied), so a `work_dir` naming a credential directory is answered by whether it exists.

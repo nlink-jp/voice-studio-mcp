@@ -28,6 +28,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/nlink-jp/voice-studio-mcp/internal/toolerr"
 )
@@ -48,6 +49,11 @@ type Workspace struct {
 	// floor judges a file before it is read (Manager.floor); a Workspace
 	// without one refuses every read.
 	floor func(raw, resolved string) string
+	// judged remembers the floor's answer per path for this Workspace, which
+	// lives for one tool call: master reads each line's WAV and then verifies
+	// it, and every check costs a walk of the credential directories.
+	mu     sync.Mutex
+	judged map[string]string
 }
 
 // judge refuses a file the floor refuses — pathguard's Local policy with this
@@ -65,7 +71,19 @@ func (w *Workspace) judge(rel string) error {
 			"this server's read check was not set up (workspace.NewManager)")
 	}
 	abs := w.Path(rel)
-	if why := w.floor(abs, abs); why != "" {
+	w.mu.Lock()
+	why, seen := w.judged[abs]
+	w.mu.Unlock()
+	if !seen {
+		why = w.floor(abs, abs)
+		w.mu.Lock()
+		if w.judged == nil {
+			w.judged = map[string]string{}
+		}
+		w.judged[abs] = why
+		w.mu.Unlock()
+	}
+	if why != "" {
 		return toolerr.Newf(toolerr.CodePathNotAllowed, "%q is refused: %s", rel, why)
 	}
 	return nil

@@ -168,3 +168,76 @@ func writeFileAt(t *testing.T, p, body string) {
 		t.Fatal(err)
 	}
 }
+
+// The files the server names itself are judged too. A link planted at a
+// line's cached WAV to a place on the floor inside the workspace does not
+// count as cached, whether or not the file behind it is there; and a link
+// planted at the dictionary record is not read and written back into the
+// workspace, where the caller could read it.
+func TestServerNamedFilesAreJudged(t *testing.T) {
+	base := realDir(t, t.TempDir())
+	home := filepath.Join(base, "home")
+	t.Setenv("HOME", home)
+	work := filepath.Join(base, "sync")
+	ws := filepath.Join(work, "ws")
+	server := filepath.Join(ws, "srv")
+	for _, d := range []string{filepath.Join(home, ".ssh"), server} {
+		mkdirAll(t, d)
+	}
+	target := filepath.Join(ws, "ssh_config.wav")
+	symlink(t, target, filepath.Join(home, ".ssh", "config"))
+	writeFileAt(t, filepath.Join(ws, "casting.toml"), testCasting)
+	writeFileAt(t, filepath.Join(ws, "ok.jsonl"), `{"id":1,"speaker":"narrator","text":"テスト"}`+"\n")
+
+	h := newHarness(t)
+	h.deps.WorkDir = workdir.NewResolver(server)
+	h.deps.WS = workspace.NewManager(h.deps.WorkDir.CheckBeneath, h.deps.WorkDir.LocalPath)
+	args := func() map[string]any {
+		return map[string]any{"work_dir": work, "workspace_id": "ws", "script_path": "ok.jsonl"}
+	}
+	if _, jo := h.runScriptJob(args()); jo.State != "done" || jo.Failed != 0 {
+		t.Fatalf("first synthesis: %+v", jo)
+	}
+	// Each run re-synthesizes the line and replaces the link with a real WAV,
+	// so the link is planted again before each one, and each job is waited for.
+	wav := filepath.Join(ws, "wav", "1.wav")
+	cached := func() int {
+		if err := os.Remove(wav); err != nil {
+			t.Fatal(err)
+		}
+		symlink(t, filepath.Join("..", "ssh_config.wav"), wav)
+		so, jo := h.runScriptJob(args())
+		if jo.State != "done" {
+			t.Fatalf("synthesis: %+v", jo)
+		}
+		return so.Cached
+	}
+	writeFileAt(t, target, "RIFF-not-really")
+	e := cached()
+	if err := os.Remove(target); err != nil {
+		t.Fatal(err)
+	}
+	if m := cached(); e != 0 || m != 0 {
+		t.Errorf("a cached WAV linked to a floor place: cached %d with the file, %d without; want 0 both", e, m)
+	}
+
+	secret := filepath.Join(server, "words.json")
+	writeFileAt(t, secret, `{"SECRETWORD":{"pronunciation":"シークレット","accent_type":1,"engine_uuid":"x"}}`)
+	record := filepath.Join(ws, "dict", "words.json")
+	_ = os.Remove(record)
+	symlink(t, filepath.Join("..", "srv", "words.json"), record)
+	body, isErr := h.callTool("register_dictionary", map[string]any{
+		"work_dir": work, "workspace_id": "ws",
+		"words": []map[string]any{{"surface": "美咲", "pronunciation": "ミサキ", "accent_type": 1}},
+	})
+	if isErr {
+		t.Fatalf("register_dictionary: %s", body)
+	}
+	b, err := os.ReadFile(record)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(b), "SECRETWORD") {
+		t.Errorf("the planted record's contents were written into the workspace: %s", b)
+	}
+}
