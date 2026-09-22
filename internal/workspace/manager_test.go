@@ -12,7 +12,7 @@ import (
 )
 
 func TestEnsureCreatesLayout(t *testing.T) {
-	m := NewManager()
+	m := NewManager(allowAll)
 	w, err := m.EnsureUnder(t.TempDir(), "ep01")
 	if err != nil {
 		t.Fatalf("ensure: %v", err)
@@ -29,14 +29,14 @@ func TestEnsureCreatesLayout(t *testing.T) {
 }
 
 func TestEnsureRejectsBadID(t *testing.T) {
-	m := NewManager()
+	m := NewManager(allowAll)
 	if _, err := m.EnsureUnder(t.TempDir(), "../evil"); !errors.Is(err, ErrInvalidID) {
 		t.Errorf("expected invalid_workspace_id, got %v", err)
 	}
 }
 
 func TestResolveInside(t *testing.T) {
-	m := NewManager()
+	m := NewManager(allowAll)
 	w, err := m.EnsureUnder(t.TempDir(), "ws")
 	if err != nil {
 		t.Fatal(err)
@@ -71,7 +71,7 @@ func TestResolveInside(t *testing.T) {
 // validated; what it still owns is the workspace id and the refusal to invent
 // the parent (organization ADR-021 §4).
 func TestEnsureUnderValidation(t *testing.T) {
-	m := NewManager()
+	m := NewManager(allowAll)
 	if _, err := m.EnsureUnder("relative/path", "ep1"); err == nil {
 		t.Error("a relative work_dir must be refused")
 	}
@@ -85,7 +85,7 @@ func TestEnsureUnderValidation(t *testing.T) {
 }
 
 func TestRootHelpersRoundTrip(t *testing.T) {
-	m := NewManager()
+	m := NewManager(allowAll)
 	w, err := m.EnsureUnder(t.TempDir(), "io")
 	if err != nil {
 		t.Fatal(err)
@@ -121,7 +121,7 @@ func TestSymlinkContainment(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	m := NewManager()
+	m := NewManager(allowAll)
 	w, err := m.EnsureUnder(t.TempDir(), "evil")
 	if err != nil {
 		t.Fatal(err)
@@ -165,7 +165,7 @@ func TestSymlinkContainment(t *testing.T) {
 // scribes and image-forge were fixed then; this server — which shares a workspace with video-studio-mcp — was not.
 func TestAMissingFileNamesThePathItLookedFor(t *testing.T) {
 	workDir := t.TempDir()
-	var m Manager
+	m := NewManager(allowAll)
 	w, err := m.EnsureUnder(workDir, "drama")
 	if err != nil {
 		t.Fatal(err)
@@ -214,7 +214,7 @@ func TestEnsureRefusesLinkedWorkspaceDir(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	w, err := NewManager().EnsureUnder(workDir, "ep1")
+	w, err := NewManager(allowAll).EnsureUnder(workDir, "ep1")
 	if err == nil {
 		t.Fatalf("a linked workspace dir was accepted: base=%s", w.BaseDir)
 	}
@@ -236,5 +236,33 @@ func TestEnsureRefusesLinkedWorkspaceDir(t *testing.T) {
 			names = append(names, e.Name())
 		}
 		t.Errorf("the link's target was written through: %v", names)
+	}
+}
+
+// allowAll stands for the server's check in tests of the manager's own
+// mechanics; the check itself is workdir.Resolver.CheckBeneath's.
+func allowAll(string) error { return nil }
+
+// The directory actually used is judged before it is made: the check sees
+// <work_dir>/<workspace_id>, and its refusal is returned as is, with nothing
+// created. A Manager without a check refuses every workspace.
+func TestEnsureUnderJudgesTheWorkspaceDirectoryBeforeMakingIt(t *testing.T) {
+	work := t.TempDir()
+	refusal := errors.New("refused")
+	var seen string
+	m := NewManager(func(dir string) error { seen = dir; return refusal })
+	if _, err := m.EnsureUnder(work, "gh"); !errors.Is(err, refusal) {
+		t.Fatalf("EnsureUnder = %v, want the check's refusal", err)
+	}
+	if want := filepath.Join(work, "gh"); seen != want {
+		t.Errorf("the check saw %q, want %q", seen, want)
+	}
+	if _, err := os.Stat(filepath.Join(work, "gh")); !os.IsNotExist(err) {
+		t.Errorf("a refused workspace was created (stat: %v)", err)
+	}
+	for name, m := range map[string]*Manager{"no check": NewManager(nil), "zero": {}} {
+		if _, err := m.EnsureUnder(work, "ws"); err == nil {
+			t.Errorf("%s: EnsureUnder succeeded", name)
+		}
 	}
 }

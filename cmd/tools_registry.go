@@ -37,6 +37,7 @@ func registerTools(srv *mcpserver.Server, cfg *config.Config, client *engine.Cli
 // impossible for a tool added later to forget: no tool constructs a Resolver
 // of its own, they all read Deps.WorkDir.
 func newToolDeps(cfg *config.Config, client *engine.Client, engineVersion string, logger *slog.Logger) *tools.Deps {
+	wd := workDirResolver()
 	return &tools.Deps{
 		Cfg:    cfg,
 		Client: client,
@@ -45,8 +46,8 @@ func newToolDeps(cfg *config.Config, client *engine.Client, engineVersion string
 			Cfg:           cfg.Synthesis,
 			EngineVersion: engineVersion,
 		},
-		WS:      workspace.NewManager(),
-		WorkDir: workDirResolver(),
+		WS:      workspace.NewManager(wd.CheckBeneath),
+		WorkDir: wd,
 		Logger:  logger,
 	}
 }

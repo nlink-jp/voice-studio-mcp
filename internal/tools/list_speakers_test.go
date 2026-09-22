@@ -39,6 +39,7 @@ func newHarness(t *testing.T) *testHarness {
 	cfg := config.Default()
 	root := t.TempDir()
 	client := engine.NewClient(mock.URL(), 5*time.Second)
+	resolver := workdir.NewResolver(t.TempDir())
 	deps := &Deps{
 		Cfg:    cfg,
 		Client: client,
@@ -47,8 +48,8 @@ func newHarness(t *testing.T) *testHarness {
 			Cfg:           cfg.Synthesis,
 			EngineVersion: "1.1.0-mock",
 		},
-		WS:      workspace.NewManager(),
-		WorkDir: workdir.NewResolver(t.TempDir()),
+		WS:      workspace.NewManager(resolver.CheckBeneath),
+		WorkDir: resolver,
 		Logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
 	return &testHarness{t: t, deps: deps, mock: mock, root: root}
