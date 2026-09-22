@@ -273,11 +273,13 @@ func TestAJobJudgesAfresh(t *testing.T) {
 	}
 	wav := filepath.Join(ws, "wav", "1.wav")
 	for _, present := range []bool{true, false} {
-		release := make(chan struct{})
+		started, release := make(chan struct{}), make(chan struct{})
 		h.deps.Jobs.Submit(context.Background(), ws, []job.Item{{LineID: 0, Run: func(context.Context) (bool, error) {
+			close(started)
 			<-release
 			return false, nil
 		}}})
+		<-started // the slot is held before the call queues its job
 		so, jo := func() (scriptOut, jobOut) {
 			body, isErr := h.callTool("synthesize_script", args)
 			if isErr {

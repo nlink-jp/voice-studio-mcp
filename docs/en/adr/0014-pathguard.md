@@ -92,9 +92,10 @@ whether or not their targets existed).
   job runs after the call that queued it, possibly behind other jobs, so it takes a `Fresh` workspace
   that remembers nothing: its first memo version reused the call's answers, and a WAV swapped for a
   link while the job waited counted as cached when the file behind it existed (the narrow review of
-  the memo found it). `master` over 300 lines went from about 0.10 s to 0.75 s with a fake ffmpeg, and a cached
-  `synthesize_script` re-run of 300 lines from 0.09 s to 0.72 s (measured 2026-09-22); a real ffmpeg
-  pass over that much audio takes far longer. A check prepared once per call belongs in pathguard.
+  the memo found it). `master` over 300 lines went from about 0.10 s to 0.75 s with a fake ffmpeg,
+  and the reply to a cached `synthesize_script` re-run of 300 lines from 0.09 s to 0.72 s (measured
+  2026-09-22); the job then judges every line again, so the re-run until `check_job` says done takes
+  about twice the reply. A real ffmpeg pass over that much audio takes far longer. A check prepared once per call belongs in pathguard.
 - ffmpeg reads the concat list and the chapter metadata the server writes just before spawning it;
   those two are not judged, and redirecting them needs a swap in between (the race below).
 - `TestExistenceIsNotRevealed` calls `synthesize_script`, `synthesize_line` and `master` with the
