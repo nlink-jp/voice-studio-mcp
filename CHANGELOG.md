@@ -6,6 +6,17 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-11-04
+
+### Security
+
+- **Checking that `work_dir` is writable no longer writes anything.** The
+  check comes from nlink-jp/pathguard, now v0.3.1 (nlink-jp/pathguard#1). It
+  used to create and remove a probe file by name after judging the directory
+  by name, so a path component swapped for a link in between could put the
+  probe inside a protected place. It is now `access(2)` (`W_OK|X_OK`),
+  which writes nothing.
+
 ### Tests
 
 - `make test-e2e` runs again. The harness still wrote `[workspace]
