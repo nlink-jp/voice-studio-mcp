@@ -1,10 +1,11 @@
 package script
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
-	"github.com/BurntSushi/toml"
+	"github.com/nlink-jp/toml"
 
 	"github.com/nlink-jp/voice-studio-mcp/internal/toolerr"
 )
@@ -36,12 +37,14 @@ type Casting struct {
 // Unknown keys are an error.
 func ParseCasting(data []byte, path string) (*Casting, error) {
 	var c Casting
-	meta, err := toml.Decode(string(data), &c)
-	if err != nil {
+	_, err := toml.Decode(string(data), &c)
+	var unknown *toml.UnknownKeysError
+	if err != nil && !errors.As(err, &unknown) {
 		return nil, toolerr.Newf(toolerr.CodeCastingUnresolved,
 			"load casting table %s: %v", path, err)
 	}
-	if undecoded := meta.Undecoded(); len(undecoded) > 0 {
+	if unknown != nil {
+		undecoded := unknown.Keys
 		return nil, toolerr.Newf(toolerr.CodeCastingUnresolved,
 			"casting table %s has unknown keys: %v", path, undecoded)
 	}

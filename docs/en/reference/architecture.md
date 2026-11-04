@@ -53,7 +53,8 @@ cmd (cobra: serve/doctor/version)
 mcpserver ──► jsonrpc, transport, toolerr   (the protocol layer knows no domain)
 ```
 
-- External Go dependencies: `cobra` and `BurntSushi/toml` only. The engine
+- External Go dependencies: `cobra` and `nlink-jp/toml` (strict: an unknown
+  key is an error) only. The engine
   and ffmpeg are **runtime** dependencies, never code dependencies.
 - The skeleton (transport/jsonrpc/mcpserver/toolerr/logging/e2e harness) is
   the org-standard pattern ported from data-toolbox-mcp.

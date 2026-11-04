@@ -51,7 +51,7 @@ cmd (cobra: serve/doctor/version)
 mcpserver ──► jsonrpc, transport, toolerr   (プロトコル層はドメインを知らない)
 ```
 
-- 外部 Go 依存は `cobra` と `BurntSushi/toml` のみ。エンジンと ffmpeg は
+- 外部 Go 依存は `cobra` と `nlink-jp/toml`(厳格: 未知のキーはエラー)のみ。エンジンと ffmpeg は
   **ランタイム依存**(コード依存にしない)。
 - 骨格(transport/jsonrpc/mcpserver/toolerr/logging/e2e ハーネス)は
   data-toolbox-mcp から移植した組織共通パターン。

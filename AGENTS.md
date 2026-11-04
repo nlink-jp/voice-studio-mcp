@@ -12,8 +12,8 @@ Six tools: `list_speakers`, `register_dictionary`, `synthesize_script`
 (async job + content-hash cache), `synthesize_line`, `check_job`,
 `master` (ffmpeg concat + loudnorm + mp3/m4b + credits). Fully local;
 no cloud, no credentials. Skeleton ported from `data-toolbox-mcp`.
-Dependencies: `cobra`, `BurntSushi/toml` only (engine and ffmpeg are
-runtime dependencies).
+Dependencies: `cobra`, `nlink-jp/toml` (strict: an unknown key is an
+error) only (engine and ffmpeg are runtime dependencies).
 
 ## Build & test
 
