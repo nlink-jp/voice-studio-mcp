@@ -31,6 +31,11 @@ make package-skill   # → dist/multi-actor-narration-<version>.zip (root = the 
 make install-skill   # unpack that zip into ~/.claude/skills (SKILLS_DEST=...)
 ```
 
+**Releasing uploads the skill zip too.** `make package` builds
+`dist/multi-actor-narration-<version>.zip` beside the binary archives and `verify-release`
+refuses a release without it, but nothing checks the upload: attach it with
+the binaries (`gh release upload`), every release.
+
 Never `go build` directly — always `make build` (outputs to `dist/`).
 v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
 
@@ -194,7 +199,8 @@ v1 targets darwin/arm64 only (PLATFORMS in the Makefile).
   `multi-actor-narration-<version>.zip` on **every** release: `make package`
   builds it and `verify-release` refuses a release without it (it reached only
   v0.4.0/v0.4.1 before). `internal/tools/skill_test.go` holds the skill to the
-  server both ways — every backticked identifier must be a registered tool,
+  server both ways — every backticked snake_case identifier (and the key of a
+  backticked `key: value` example) must be a registered tool,
   schema property, toolerr code or json/toml tag (non-server names are listed
   in `notServerNames` with what they are), retired names stay absent, and the
   templates parse with `internal/script`. A new name in the skill that the
