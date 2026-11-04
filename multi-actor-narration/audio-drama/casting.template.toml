@@ -18,6 +18,7 @@ style_id     = 0                                        # list_speakers の「�
 credit       = "AivisSpeech: みちのくあいり"
 license_checked = false
   [characters."美咲".styles]  # 台本の style 名 → style id（list_speakers で確認）
+  "おちつき" = 0
   "悲しみ" = 0
   "怒り"   = 0
   "驚き"   = 0

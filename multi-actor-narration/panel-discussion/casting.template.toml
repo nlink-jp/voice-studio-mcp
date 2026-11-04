@@ -22,9 +22,8 @@ style_id     = 391794336
 credit       = "AivisSpeech: ろてじん（長老ボイス）"
 license_checked = false
 
-# 実務・現場視点の第3者を足す場合
-# [characters."専門家C"]
-# speaker_uuid = "b1ca560f-f212-4e67-ab7d-0a4f5afb75a8"  # 花音（女性で差別化）
-# style_id     = 1325133120
-# credit       = "AivisSpeech: 花音"
-# license_checked = false
+[characters."専門家C"]  # 実務・現場視点の第3者（女性で差別化）
+speaker_uuid = "b1ca560f-f212-4e67-ab7d-0a4f5afb75a8"  # 花音
+style_id     = 1325133120
+credit       = "AivisSpeech: 花音"
+license_checked = false
