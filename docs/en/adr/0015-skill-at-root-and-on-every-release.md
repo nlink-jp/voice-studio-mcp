@@ -8,8 +8,8 @@
 
 ADR-0011 made the skill a separate release asset, `multi-actor-narration.skill`,
 built by `make package-skill`. Nothing in the release made building or attaching
-it necessary, so it reached a release twice — v0.4.0 and v0.4.1 — and v0.5.0 to
-v0.6.4 carry the binary only (nlink-jp/voice-studio-mcp#3). A user who installs
+it necessary, so it reached a release twice — v0.4.0 and v0.4.1 — and the seventeen
+releases from v0.4.2 to v0.6.4 carry the binary only (nlink-jp/voice-studio-mcp#3). A user who installs
 the skill from a release gets the v0.4.1 skill, which still teaches
 `workspace_root`, the argument v0.5.0 replaced with a required `work_dir`. Since
 mcp-tactics v0.13.0 no longer lists this server, the README and the release are
@@ -73,5 +73,5 @@ repository chose to, because the packaging was being reworked anyway.
 | Alternative | Why not |
 |---|---|
 | Fix only the packaging and leave `skills/` | Leaves this repository the one exception to ADR-027's layout and the organization validator out of `make test` |
-| Rely on the release checklist to attach the asset | The checklist existed for v0.5.0 to v0.6.4 and the asset was skipped every time; a step that only prose requires gets skipped |
+| Rely on the release checklist to attach the asset | The checklist existed for v0.4.2 to v0.6.4 and the asset was skipped every time; a step that only prose requires gets skipped |
 | Re-upload the current skill to past releases | A past release's skill should match that release's server |
