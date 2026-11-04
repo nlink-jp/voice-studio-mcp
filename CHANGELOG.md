@@ -4,6 +4,45 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-11-04
+
+### Changed
+
+- **The skill ships on every release, as `multi-actor-narration-vX.Y.Z.zip`**
+  (#3, ADR-0015). It had reached only v0.4.0 and v0.4.1, so the seventeen
+  releases since carried no skill, and a skill installed from a release still
+  taught `workspace_root`. The zip's root is the skill folder, the layout the
+  app's skill registration accepts; the `.skill` package name is retired.
+  `make package` builds it, and `make verify-release` refuses a release whose
+  skill zip is missing, holds anything but the tracked skill files, differs
+  from them, or comes from a dirty tree.
+- **The skill moved to the repository root** (`multi-actor-narration/`,
+  organization ADR-027), and `make test` runs the organization's skill
+  validator. `skills/build.sh` is removed.
+- `make install-skill` unpacks the built zip instead of copying the source
+  tree.
+- The README's skill section says how each caller installs it: the app's
+  skill registration, `~/.claude/skills/`, and the gem-agent and lagent skill
+  directories (copied, not linked).
+
+### Fixed
+
+- **Three format templates could not be used as written.** audio-drama's and
+  talk-podcast's scripts used the style おちつき for a character whose casting
+  entry did not map it, and panel-discussion's script used 専門家C, whom the
+  casting template left commented out; copied as they were, all three stopped
+  at `casting_unresolved`.
+
+### Tests
+
+- `internal/tools/skill_test.go` holds the skill to the server in both
+  directions: every backticked snake_case identifier, and the key of every
+  backticked `key: value` example, must be a registered tool, a schema
+  property, a `toolerr` code or a json/toml tag of the server's own types;
+  retired names stay absent; the templates and the Markdown script examples
+  parse with `internal/script`, and each script resolves against its casting
+  table.
+
 ## [0.6.4] - 2026-11-04
 
 ### Changed
