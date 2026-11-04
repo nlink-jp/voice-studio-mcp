@@ -4,7 +4,15 @@ All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.6.4] - 2026-11-04
+
+### Changed
+
+- **The config file and the casting table are read by nlink-jp/toml** (v0.1.1)
+  instead of the third-party `BurntSushi/toml`, so the server carries no TOML
+  code from outside the organization. Both read as before: unknown keys are
+  still refused, and the removed `[workspace] workspace_dir` is still named
+  with what replaced it.
 
 ## [0.6.3] - 2026-11-04
 
