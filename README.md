@@ -170,9 +170,11 @@ Then ask the agent:
 or point it at a PDF/theme for an explainer format. The skill ships here, not
 in a separate repo, so it always matches this server's schema and tools:
 `internal/tools/skill_test.go` holds it to the server in both directions —
-every tool is named, every name the skill teaches exists in the server, retired
-names stay absent, and the templates parse with the server's own parsers — and
-`make test` runs the organization's skill validator (ADR-0009, ADR-0015).
+every tool is named, every identifier the skill writes in backticks (a snake_case name, or the key of a `key: value` example) exists in the server, retired names stay absent, and the templates and
+script examples parse with the server's own parsers — and
+`make test` runs the organization's skill validator (ADR-0009, ADR-0015). A
+one-word name in backticks cannot be told from an ordinary word and is not
+checked.
 
 ### Script JSONL (canonical schema)
 

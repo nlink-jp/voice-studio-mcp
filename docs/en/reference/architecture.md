@@ -152,8 +152,11 @@ test seam.
 | [0008](../adr/0008-license-collection-from-manifests.md) | License collection automated from AIVM manifests (declared); verification stays human (verified) |
 | [0009](../adr/0009-bundle-skill-with-mcp.md) | radio-drama skill bundled in this repo (contracts evolve in one commit + coherence test) |
 | [0010](../adr/0010-agent-prepared-workspaces.md) | Work in the agent-prepared work_dir + os.Root kernel containment + get_usage |
-| [0011](../adr/0011-consolidate-skill-into-multi-actor-narration.md) | Skill consolidated into multi-actor-narration (5 formats incl. generalized audio-drama); shipped as a separate .skill release asset |
+| [0011](../adr/0011-consolidate-skill-into-multi-actor-narration.md) | Skill consolidated into multi-actor-narration (5 formats incl. generalized audio-drama); shipped as a separate release asset |
 | [0012](../adr/0012-engine-signature-self-repair.md) | Fix the unsigned-engine launch failure with local self-repair (doctor --fix), not a fork/notarize |
+| [0013](../adr/0013-work-dir-contract.md) | The work directory is a required per-call `work_dir`, with no default root |
+| [0014](../adr/0014-pathguard.md) | Path judgement is left to nlink-jp/pathguard |
+| [0015](../adr/0015-skill-at-root-and-on-every-release.md) | The skill sits at the repository root and ships as `multi-actor-narration-<version>.zip` on every release; tests hold it to the server both ways |
 
 ## 8. Out of scope (deliberately, in v1)
 

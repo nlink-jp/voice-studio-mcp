@@ -143,14 +143,32 @@ var notServerNames = map[string]string{
 // or field name: lower-case words joined by underscores.
 var snakeIdent = regexp.MustCompile("`([a-z]+(?:_[a-z0-9]+)+)`")
 
+// keyIdent is the key of a `key: value` example, such as `async: true`: a
+// single word, which snakeIdent does not see.
+var keyIdent = regexp.MustCompile("`([a-z][a-z0-9_]*): [^`]+`")
+
+// skillIdentifiers returns the names the skill teaches that this test can
+// tell from prose: snake_case identifiers in backticks, and the keys of
+// backticked `key: value` examples. A single plain word in backticks is not
+// among them — it cannot be told from an ordinary word — so a misspelled
+// one-word argument or key passes unless an example that parses carries it.
+func skillIdentifiers(corpus string) []string {
+	var out []string
+	for _, re := range []*regexp.Regexp{snakeIdent, keyIdent} {
+		for _, m := range re.FindAllStringSubmatch(corpus, -1) {
+			out = append(out, m[1])
+		}
+	}
+	return out
+}
+
 // TestSkillNamesOnlyWhatTheServerHas is the direction a presence test cannot
 // cover: a retired or misspelled name in the skill still passes every
 // "does the skill mention X" check.
 func TestSkillNamesOnlyWhatTheServerHas(t *testing.T) {
 	known := serverVocabulary(t)
 	seen := map[string]bool{}
-	for _, m := range snakeIdent.FindAllStringSubmatch(readSkillCorpus(t), -1) {
-		name := m[1]
+	for _, name := range skillIdentifiers(readSkillCorpus(t)) {
 		if seen[name] {
 			continue
 		}
@@ -350,4 +368,26 @@ func toolerrCodes(t *testing.T) map[string]bool {
 		t.Fatalf("found only %d toolerr codes; has internal/toolerr changed shape?", len(codes))
 	}
 	return codes
+}
+
+// A script example in the skill's Markdown is copied as readily as a template,
+// so every ```jsonl block must pass the same parser.
+func TestSkillScriptExamplesParse(t *testing.T) {
+	block := regexp.MustCompile("(?s)```jsonl\n(.*?)```")
+	found := 0
+	for rel, body := range readSkillFiles(t, ".md") {
+		for _, m := range block.FindAllStringSubmatch(body, -1) {
+			found++
+			lines, errs := script.Parse(strings.NewReader(m[1]))
+			for _, e := range errs {
+				t.Errorf("%s: example line %d: %s", rel, e.LineNo, e.Message)
+			}
+			if len(lines) == 0 {
+				t.Errorf("%s: a jsonl example with no lines", rel)
+			}
+		}
+	}
+	if found == 0 {
+		t.Fatal("the skill has no ```jsonl script example")
+	}
 }

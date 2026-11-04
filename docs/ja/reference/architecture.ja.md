@@ -148,8 +148,11 @@ enqueue 前バリデーションを同期で完走させるのが要点: エー�
 | [0008](../adr/0008-license-collection-from-manifests.ja.md) | 規約の収集は AIVM マニフェストから自動化(declared)、確認は人間(verified) |
 | [0009](../adr/0009-bundle-skill-with-mcp.ja.md) | radio-drama スキルは本リポジトリに同梱(契約の同一コミット進化+整合テスト) |
 | [0010](../adr/0010-agent-prepared-workspaces.ja.md) | エージェントが用意した work_dir で仕事をする+os.Root カーネル封じ込め+get_usage |
-| [0011](../adr/0011-consolidate-skill-into-multi-actor-narration.ja.md) | スキルを multi-actor-narration に一本化(汎用化 audio-drama 含む5フォーマット)、別 .skill リリースアセットで配布 |
+| [0011](../adr/0011-consolidate-skill-into-multi-actor-narration.ja.md) | スキルを multi-actor-narration に一本化(汎用化 audio-drama 含む5フォーマット)、別のリリースアセットで配布 |
 | [0012](../adr/0012-engine-signature-self-repair.ja.md) | 未署名エンジンの起動失敗は doctor --fix のローカル自己修復で解く(fork/notarize せず) |
+| [0013](../adr/0013-work-dir-contract.ja.md) | work dir は呼び出しごとの必須の `work_dir`、既定ルートは持たない |
+| [0014](../adr/0014-pathguard.ja.md) | パスの判定は nlink-jp/pathguard に任せる |
+| [0015](../adr/0015-skill-at-root-and-on-every-release.ja.md) | スキルはリポジトリ直下に置き、毎回のリリースに `multi-actor-narration-<版>.zip` で付ける。試験がサーバーと両方向から照合する |
 
 ## 8. スコープ外(v1 で意図的にやらないこと)
 

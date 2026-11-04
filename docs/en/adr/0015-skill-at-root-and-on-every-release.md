@@ -41,7 +41,8 @@ repository chose to, because the packaging was being reworked anyway.
 5. **The tests hold the skill to the server in both directions**
    (`internal/tools/skill_test.go`):
    - every registered tool except `get_usage` is named by the skill;
-   - every backticked identifier in the skill is a registered tool, a property
+   - every snake_case identifier in backticks, and the key of every backticked
+     `key: value` example, is a registered tool, a property
      of a tool's input schema, a `toolerr` code or a json/toml tag of the
      server's own types — read from the server, not copied. The few names
      that are not the server's (fields of the skill's own source cards, the
