@@ -2,6 +2,7 @@
 
 - **Status**: Accepted (2026-07-05)
 - **Amends**: ADR-0009 (the bundled skill's identity and distribution; the in-repo coherence principle is reinforced, not reversed)
+- **Amended by**: [ADR-0015](0015-skill-at-root-and-on-every-release.md) (the `.skill` package becomes `multi-actor-narration-<version>.zip`, built by `make package` and required by `verify-release`; `skills/build.sh` is removed)
 
 ## Context
 

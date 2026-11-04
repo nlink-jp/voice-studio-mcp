@@ -5,7 +5,7 @@
 // whole skill corpus, so the skill must reference every tool the server
 // registers and its schema examples must use only fields the script parser
 // accepts.
-package skills
+package tools
 
 import (
 	"os"
@@ -16,7 +16,7 @@ import (
 
 // skillDir is the single bundled skill (ADR-0011 consolidated the former
 // radio-drama skill into this one as the audio-drama format).
-const skillDir = "multi-actor-narration"
+const skillDir = "../../multi-actor-narration"
 
 // readSkillCorpus concatenates every Markdown file under the skill directory
 // so coherence holds across the router, the shared pipeline, and each format.

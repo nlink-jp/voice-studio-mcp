@@ -2,6 +2,7 @@
 
 - **Status**: Accepted (2026-07-05)
 - **Amends**: ADR-0009（同梱スキルの正体と配布方法を改定。「in-repo で整合を担保する」原則は覆さず強化する）
+- **Amended by**: [ADR-0015](0015-skill-at-root-and-on-every-release.ja.md)（`.skill` を `multi-actor-narration-<版>.zip` に改め、`make package` が作り `verify-release` が必須とする。`skills/build.sh` は廃止）
 
 ## Context
 

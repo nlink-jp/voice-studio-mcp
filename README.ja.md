@@ -143,20 +143,36 @@ config の `engine.command` を設定してください。
 - **audio-drama** — 小説・脚本 → 朗読劇 / オーディオブック
   (旧 radio-drama スキルを汎用化した後継)
 
-```sh
-make install-skill      # → ~/.claude/skills/multi-actor-narration
-make package-skill      # → dist/multi-actor-narration.skill(可搬パッケージ)
-```
+### スキルの導入
 
-導入後、Claude Code / Cowork に
+サーバーとスキルは別々に入れます。Homebrew とバイナリの zip にはサーバーしか
+入っていません。各リリースには、スキルを別のアセット
+`multi-actor-narration-vX.Y.Z.zip` として付けています(zip の根はスキルの
+フォルダ)。使っているサーバーと同じリリースのものを取ってください — 古い
+スキルは、サーバーがもう受け付けない引数を教えます。
+
+- **Claude(デスクトップアプリ / claude.ai)** — カスタマイズ → スキル から
+  zip をアップロードします。更新のたびに新しい zip を上げ直してください。
+  上げ直すまで、アプリは古いものを使い続けます。
+- **Claude Code** — `~/.claude/skills/` に展開します:
+  `unzip multi-actor-narration-vX.Y.Z.zip -d ~/.claude/skills/`
+- **gem-agent / lagent** — それぞれのスキル用ディレクトリ
+  `~/.config/gem-agent/skills/`、`~/.config/lagent/skills/` に展開します。
+  リンクではなく写してください。両者のサンドボックスは `~/.claude` を読めない
+  ため、そこへのリンクは読み込まれません。
+
+リポジトリからは、`make install-skill` が zip を作って `~/.claude/skills/` に
+展開します(別の場所は `SKILLS_DEST=<dir>`)。`make package-skill` は
+`dist/multi-actor-narration-<版>.zip` を作るだけです。
+
+導入後、エージェントに
 *「/multi-actor-narration samples/manuscript.ja.md」*(audio-drama に振り分け)
 のように依頼できます。PDF やテーマを渡せば解説フォーマットになります。
-スキル source を別リポジトリでなくここに同梱するのは、本サーバーの
-スキーマ・ツールと常に一致させるためです — `skills/skills_test.go` が
-マルチファイル構成のスキル全体で整合を機械検査します(ADR-0009)。
-リリースでは `multi-actor-narration.skill` を MCP バイナリの隣に**別アセット**
-として添付するので、リポジトリを持たない利用者もスキルだけ導入できます
-(ADR-0011)。
+スキルを別リポジトリでなくここに同梱するのは、本サーバーのスキーマ・ツールと
+常に一致させるためです。`internal/tools/skill_test.go` がスキルとサーバーを
+両方向から照合し(全ツールに触れていること、スキルが教える名前がすべて
+サーバーにあること、廃止した名前が無いこと、雛形がサーバー自身のパーサーを
+通ること)、`make test` が組織のスキル検証を走らせます(ADR-0009、ADR-0015)。
 
 ### 台本JSONL(canonicalスキーマ)
 
@@ -276,7 +292,7 @@ VOICE_STUDIO_TEST_REAL_ENGINE=1 make test-e2e   # opt-in: 実エンジン
 - [`docs/ja/reference/agent-workflow.ja.md`](docs/ja/reference/agent-workflow.ja.md) — エージェント向けワークフロー手順書(Claude Code / Cowork にそのまま渡す。サンプル素材は [`samples/`](samples/))
 - [`docs/ja/reference/setup.ja.md`](docs/ja/reference/setup.ja.md) — セットアップガイド(導入→最初の制作→トラブルシューティング)
 - [`docs/ja/reference/architecture.ja.md`](docs/ja/reference/architecture.ja.md) — アーキテクチャ概観と設計判断の索引
-- [`docs/ja/adr/`](docs/ja/adr/) — 非自明な設計の「なぜ」を記録した ADR 12本
+- [`docs/ja/adr/`](docs/ja/adr/) — 非自明な設計の「なぜ」を記録した ADR
 - [`docs/ja/voice-studio-mcp-rfp.ja.md`](docs/ja/voice-studio-mcp-rfp.ja.md) — RFP
 - English: [`docs/en/`](docs/en/)(setup / architecture / ADR / RFP)
 

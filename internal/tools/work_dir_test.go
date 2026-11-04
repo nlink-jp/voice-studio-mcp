@@ -154,7 +154,7 @@ func TestGetUsage(t *testing.T) {
 }
 
 // TestUsageCoherence pins usage.md against the real server surface, the
-// same way skills_test.go pins the bundled skill (ADR-0009 mechanism).
+// as skill_test.go pins the bundled skill (ADR-0009, ADR-0015).
 func TestUsageCoherence(t *testing.T) {
 	for _, tool := range []string{
 		"get_usage", "list_speakers", "register_dictionary",

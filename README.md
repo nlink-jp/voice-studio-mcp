@@ -143,19 +143,36 @@ five formats over the same voice-studio pipeline:
 - **audio-drama** — novel / script → narrated audio drama / audiobook
   (the generalized successor of the former radio-drama skill)
 
-```sh
-make install-skill      # → ~/.claude/skills/multi-actor-narration
-make package-skill      # → dist/multi-actor-narration.skill (portable package)
-```
+### Installing the skill
 
-Then ask Claude Code / Cowork:
+The server and the skill install separately: Homebrew and the binary zip carry
+the server only. Every release attaches the skill as its own asset,
+`multi-actor-narration-vX.Y.Z.zip`, whose root is the skill folder. Take the
+one from the release that matches your server — an older skill teaches
+arguments the server no longer accepts.
+
+- **Claude (desktop app / claude.ai)** — Customize → Skills → upload the zip.
+  Upload the new zip again after each update; the app keeps the old one until
+  you do.
+- **Claude Code** — unpack it into `~/.claude/skills/`:
+  `unzip multi-actor-narration-vX.Y.Z.zip -d ~/.claude/skills/`
+- **gem-agent / lagent** — unpack it into the runtime's own skill directory,
+  `~/.config/gem-agent/skills/` or `~/.config/lagent/skills/`. Copy, do not
+  link: their sandboxes cannot read `~/.claude`, so a link to an install there
+  does not load.
+
+From a clone, `make install-skill` builds the zip and unpacks it into
+`~/.claude/skills/` (`SKILLS_DEST=<dir>` for another directory), and
+`make package-skill` only builds `dist/multi-actor-narration-<version>.zip`.
+
+Then ask the agent:
 *"/multi-actor-narration samples/manuscript.ja.md"* (routes to audio-drama),
-or point it at a PDF/theme for an explainer format. The skill source ships
-here (not in a separate repo) so it always matches this server's schema and
-tools — `skills/skills_test.go` enforces that across the multi-file skill
-(ADR-0009). Releases attach `multi-actor-narration.skill` as a **separate
-asset** next to the MCP binary, so users without the repo can import the
-skill directly (ADR-0011).
+or point it at a PDF/theme for an explainer format. The skill ships here, not
+in a separate repo, so it always matches this server's schema and tools:
+`internal/tools/skill_test.go` holds it to the server in both directions —
+every tool is named, every name the skill teaches exists in the server, retired
+names stay absent, and the templates parse with the server's own parsers — and
+`make test` runs the organization's skill validator (ADR-0009, ADR-0015).
 
 ### Script JSONL (canonical schema)
 
@@ -278,7 +295,7 @@ dotfiles.
 - [`docs/en/reference/agent-workflow.md`](docs/en/reference/agent-workflow.md) — the agent workflow guide (hand this to Claude Code / Cowork; sample material in [`samples/`](samples/))
 - [`docs/en/reference/setup.md`](docs/en/reference/setup.md) — setup guide (install → first production → troubleshooting)
 - [`docs/en/reference/architecture.md`](docs/en/reference/architecture.md) — architecture overview and decision index
-- [`docs/en/adr/`](docs/en/adr/) — twelve ADRs recording the *why* behind non-obvious designs
+- [`docs/en/adr/`](docs/en/adr/) — the ADRs recording the *why* behind non-obvious designs
 - [`docs/en/voice-studio-mcp-rfp.md`](docs/en/voice-studio-mcp-rfp.md) — the original RFP
 - 日本語版: [`docs/ja/`](docs/ja/) (セットアップ / アーキテクチャ / ADR / RFP)
 
