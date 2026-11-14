@@ -25,6 +25,7 @@ make test-e2e   # build + drive the binary over stdio against an
                 # in-process mock engine + ffmpeg stub
 VOICE_STUDIO_TEST_REAL_ENGINE=1 make test-e2e  # opt-in real-engine e2e
 make package    # build-all + zip + notarize darwin (NOTARY_PROFILE) + package-skill
+make vuln            # govulncheck over the build; `make package` runs it first and stops on a finding
 make verify-release  # gate: notarized, fresh, runs at this version, clean linux archives,
                      # and the skill zip (verify-skill-zip) — run before upload
 make package-skill   # → dist/multi-actor-narration-<version>.zip (root = the skill folder)
